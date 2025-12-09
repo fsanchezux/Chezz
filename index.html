@@ -42,17 +42,61 @@
 	</style>
 	<title>Chess</title>
     <script>
-      var ws = new WebSocket('ws://' + window.document.location.host);
+      var ws = new WebSocket('ws://localhost:4000' );
 	  
 	  var board = null, game = null, lastSquareTo, lastSquareFrom = null, currentSide = null;
 	  var lastMove = null;
 	  var side;
 	  var both = 0;
 	  var name = "";
+	  var gameMode = null; // 'multiplayer' o 'singleplayer'
+	  var player1Name = "";
+	  var player2Name = "";
+	  var restartRequested = false;
+	  var restartAccepted = false;
+	  var moveCount = 0;
+	  var moveHistory = [];
+	  var specialMoveDetected = false;
+	  
+	  // Condiciones especiales por color
+	  var whitePawnCenter = false;
+	  var whiteKnightCenter = false;
+	  var whiteCastling = false;
+	  var whiteCanChangeOnce = false;
+	  var whiteHasUsedChange = false;
+	  
+	  var blackPawnCenter = false;
+	  var blackKnightCenter = false;
+	  var blackCastling = false;
+	  var blackCanChangeOnce = false;
+	  var blackHasUsedChange = false;
 	  
       ws.onmessage = function(message) {
 	    move = JSON.parse(message.data);
 		console.log(move);
+		
+		// Manejar solicitud de reinicio
+		if(move.restartRequest) {
+			$("#restartMessage").html(move.player + ' solicita reiniciar la partida. ¿Aceptas?');
+			$("#restartRequest").removeClass("hidden");
+			restartRequested = true;
+			return;
+		}
+		
+		// Manejar aceptación de reinicio
+		if(move.restartAccepted) {
+			restartAccepted = true;
+			performRestart();
+			return;
+		}
+		
+		// Manejar rechazo de reinicio
+		if(move.restartRejected) {
+			alert(move.player + ' rechazó el reinicio');
+			restartRequested = false;
+			restartAccepted = false;
+			return;
+		}
 		
 		if(!move.white || !move.black) {
 			$("#turn").addClass("hidden"); // game hasn't started yet
@@ -96,8 +140,22 @@
 						promotion: 'q' 
 					 });
 					highlight(move);
+					updateMoveHistory(move);
 					board.position(move.currentFEN);
 					game.load(move.FEN);
+					if(move.promotion && (move.promotion === 'n' || move.promotion === 'b')) {
+						applyPromotion(move.to, move.promotion, game.fen().split(' ')[1] === 'w' ? 'b' : 'w');
+					}
+					// Aplicar cambio especial si fue hecho por el otro jugador
+					if(move.specialChange) {
+						game.remove(move.specialChange.square);
+						var piece = board.position()[move.specialChange.square];
+						if(piece) {
+							var color = piece.color;
+							game.put({type: move.specialChange.piece, color: color}, move.specialChange.square);
+							board.position(game.fen());
+						}
+					}
 					return;
 				} 
 			}
@@ -111,6 +169,21 @@
 				 });
 				board.position(board.fen());
 				highlight(move);
+				updateMoveHistory(move);
+				if(move.promotion && (move.promotion === 'n' || move.promotion === 'b')) {
+					applyPromotion(move.to, move.promotion, game.fen().split(' ')[1] === 'w' ? 'b' : 'w');
+				}
+				// Aplicar cambio especial si fue hecho por el otro jugador
+				// Aplicar cambio especial si fue hecho por el otro jugador
+				if(move.specialChange) {
+					game.remove(move.specialChange.square);
+					var piece = board.position()[move.specialChange.square];
+					if(piece) {
+						var color = piece.color;
+						game.put({type: move.specialChange.piece, color: color}, move.specialChange.square);
+						board.position(game.fen());
+					}
+				}
 		} 
 		
       };
@@ -135,13 +208,164 @@
 		}
 	  }
 	  
-	  var join = function(side) {
-		name = $("#username").val();
-		both++;
-		if(name.length > 0) {
-			ws.send(JSON.stringify({username: name, color: side}));
+	  var join = function (side) {
+			name = $("#username").val();
+			both++;
+			if (name.length > 0) {
+				if (ws.readyState === WebSocket.OPEN) {
+					ws.send(JSON.stringify({ username: name, color: side }));
+				} else {
+					console.log('WebSocket not ready yet, retrying in 100ms...');
+					setTimeout(join, 100); // retry after short delay
+				}
+
+			}
 		}
-	  } 
+	  
+	  var startSinglePlayer = function() {
+		  var p1 = prompt('Nombre del Jugador 1 (Blancas):', '');
+		  if(!p1 || p1.length === 0) return;
+		  
+		  var p2 = prompt('Nombre del Jugador 2 (Negras):', '');
+		  if(!p2 || p2.length === 0) return;
+		  
+		  gameMode = 'singleplayer';
+		  player1Name = p1;
+		  player2Name = p2;
+		  side = 'w'; // Empezar como blancas
+		  
+		  $("#join").addClass("hidden");
+		  $("#username").addClass("hidden");
+		  $("#singleplayerBtn").addClass("hidden");
+		  $("#multiplayerBtn").addClass("hidden");
+		  $("#modeSelector").addClass("hidden");
+		  $("#names").removeClass("hidden");
+		  $("#names").html(player1Name + " vs " + player2Name);
+		  $("#names").removeClass("label-danger");
+		  $("#names").addClass("label-info");
+		  $("#resetBtn").show();
+		  $("#restartBtn").show();
+		  
+		  board.orientation('white');
+		  updateTurnButton();
+	  }
+	  
+	  var startMultiplayer = function() {
+		  gameMode = 'multiplayer';
+		  $("#join").removeClass("hidden");
+		  $("#username").removeClass("hidden");
+		  $("#singleplayerBtn").addClass("hidden");
+		  $("#multiplayerBtn").addClass("hidden");
+		  $("#modeSelector").addClass("hidden");
+		  $("#resetBtn").show();
+		  $("#restartBtn").show();
+	  }
+	  
+	  var resetGame = function() {
+		  game = new Chess();
+		  board.position('start');
+		  gameMode = null;
+		  player1Name = "";
+		  player2Name = "";
+		  side = null;
+		  lastMove = null;
+		  lastSquareTo = null;
+		  lastSquareFrom = null;
+		  both = 0;
+		  restartRequested = false;
+		  restartAccepted = false;
+		  moveCount = 0;
+		  moveHistory = [];
+		  specialMoveDetected = false;
+		  whitePawnCenter = false;
+		  whiteKnightCenter = false;
+		  whiteCastling = false;
+		  whiteCanChangeOnce = false;
+		  whiteHasUsedChange = false;
+		  blackPawnCenter = false;
+		  blackKnightCenter = false;
+		  blackCastling = false;
+		  blackCanChangeOnce = false;
+		  blackHasUsedChange = false;
+		  
+		  $("#join").addClass("hidden");
+		  $("#username").addClass("hidden");
+		  $("#names").addClass("hidden");
+		  $("#turn").addClass("hidden");
+		  $("#singleplayerBtn").removeClass("hidden");
+		  $("#multiplayerBtn").removeClass("hidden");
+		  $("#modeSelector").removeClass("hidden");
+		  $("#resetBtn").hide();
+		  $("#restartBtn").hide();
+		  $("#restartRequest").addClass("hidden");
+		  $("#moveCounter").html("0");
+		  $("#moveHistory").html("");
+		  board.orientation('white');
+	  }
+	  
+	  var restartGame = function() {
+		  if(gameMode === 'singleplayer') {
+			  // En modo single player, reiniciar directamente
+			  game = new Chess();
+			  board.position('start');
+			  lastMove = null;
+			  lastSquareTo = null;
+			  lastSquareFrom = null;
+			  updateTurnButton();
+		  } else if(gameMode === 'multiplayer') {
+			  // En modo multiplayer, enviar solicitud de reinicio
+			  restartRequested = true;
+			  restartAccepted = false;
+			  ws.send(JSON.stringify({restartRequest: true, player: name}));
+			  alert('Solicitud de reinicio enviada. Esperando confirmación del otro jugador...');
+		  }
+	  }
+	  
+	  var acceptRestart = function() {
+		  restartAccepted = true;
+		  $("#restartRequest").addClass("hidden");
+		  ws.send(JSON.stringify({restartAccepted: true, player: name}));
+		  
+		  // Si ambos aceptan, reiniciar
+		  if(restartRequested && restartAccepted) {
+			  performRestart();
+		  }
+	  }
+	  
+	  var rejectRestart = function() {
+		  restartRequested = false;
+		  restartAccepted = false;
+		  $("#restartRequest").addClass("hidden");
+		  ws.send(JSON.stringify({restartRejected: true, player: name}));
+		  alert('Reinicio rechazado');
+	  }
+	  
+	  var performRestart = function() {
+		  game = new Chess();
+		  board.position('start');
+		  lastMove = null;
+		  lastSquareTo = null;
+		  lastSquareFrom = null;
+		  FEN = ["rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"];
+		  restartRequested = false;
+		  restartAccepted = false;
+		  moveCount = 0;
+		  moveHistory = [];
+		  specialMoveDetected = false;
+		  whitePawnCenter = false;
+		  whiteKnightCenter = false;
+		  whiteCastling = false;
+		  whiteCanChangeOnce = false;
+		  whiteHasUsedChange = false;
+		  blackPawnCenter = false;
+		  blackKnightCenter = false;
+		  blackCastling = false;
+		  blackCanChangeOnce = false;
+		  blackHasUsedChange = false;
+		  $("#moveCounter").html("0");
+		  $("#moveHistory").html("");
+		  updateTurnButton();
+	  }
 	  
 	  var init = function() {
 	    game = new Chess();
@@ -154,6 +378,9 @@
 			onDrop: onDrop,
 			onSnapEnd: onSnapEnd
 		});
+		
+		// Mostrar opciones de modo al inicio
+		gameMode = null;
 		updateTurnButton();
 	  }	
 	  
@@ -184,16 +411,191 @@
 		}
 	  }
 
+	  var applyPromotion = function(targetSquare, pieceType, color) {
+		  game.remove(targetSquare);
+		  game.put({type: pieceType, color: color}, targetSquare);
+		  board.position(game.fen());
+	  }
+	  
+	  var updateMoveHistory = function(move) {
+		  moveCount++;
+		  var moveNotation = move.from + ' → ' + move.to;
+		  if(move.captured) {
+			  moveNotation += ' (captures ' + move.captured + ')';
+		  }
+		  if(move.promotion) {
+			  moveNotation += ' (promotes to ' + move.promotion + ')';
+		  }
+		  
+		  moveHistory.push(moveNotation);
+		  
+		  // Actualizar el contador
+		  $("#moveCounter").html(moveCount);
+		  
+		  // Agregar el movimiento al historial visual
+		  var moveElement = '<div style="padding: 5px; border-bottom: 1px solid #555;">' + 
+						   '<strong>' + moveCount + '.</strong> ' + moveNotation + 
+						   '</div>';
+		  $("#moveHistory").append(moveElement);
+		  
+		  // Scroll al final del historial
+		  var moveHistoryDiv = $("#moveHistory");
+		  moveHistoryDiv.scrollTop(moveHistoryDiv[0].scrollHeight);
+	  }
+	  
+	  var isSpecialMove = function(move) {
+		  // Detectar si es un movimiento especial antes de 10 movimientos
+		  if(moveCount >= 10) return false;
+		  
+		  var piece = move.piece;
+		  var color = move.color;
+		  var from = move.from;
+		  var to = move.to;
+		  
+		  // 1. Detectar enroque
+		  if(move.flags.indexOf('k') !== -1 || move.flags.indexOf('q') !== -1) {
+			  return {type: 'castling', piece: piece, from: from, to: to, color: color};
+		  }
+		  
+		  // 2. Detectar peón al centro (d4, e4, d5, e5)
+		  if(piece === 'p' && (to === 'd4' || to === 'e4' || to === 'd5' || to === 'e5')) {
+			  return {type: 'pawnCenter', piece: piece, from: from, to: to, color: color};
+		  }
+		  
+		  // 3. Detectar caballo al centro (c3, f3, c6, f6, d4, e4, d5, e5)
+		  if(piece === 'n' && (to === 'c3' || to === 'f3' || to === 'c6' || to === 'f6' || 
+								  to === 'd4' || to === 'e4' || to === 'd5' || to === 'e5')) {
+			  return {type: 'knightCenter', piece: piece, from: from, to: to, color: color};
+		  }
+		  
+		  return false;
+	  }
+	  
+	  var handleSpecialMove = function(move) {
+		  var special = isSpecialMove(move);
+		  if(!special) {
+			  // Si no es un movimiento especial pero ya se cumplieron las 3 condiciones,
+			  // mostrar opción de cambio SOLO SI:
+			  // 1. El jugador ha completado las 3 condiciones
+			  // 2. No ha usado el cambio todavía
+			  var playerColor = move.color;
+			  var hasAllConditions = false;
+			  var hasUsedChange = false;
+			  
+			  if(playerColor === 'w') {
+				  hasAllConditions = whitePawnCenter && whiteKnightCenter && whiteCastling;
+				  hasUsedChange = whiteHasUsedChange;
+			  } else {
+				  hasAllConditions = blackPawnCenter && blackKnightCenter && blackCastling;
+				  hasUsedChange = blackHasUsedChange;
+			  }
+			  
+			  if(hasAllConditions && !hasUsedChange) {
+				  var choice = prompt('¡Ya has completado todas las condiciones!\n\n¿Quieres cambiar una pieza por otra?\n1. Escribir "cambiar" para reemplazar una pieza\n2. Dejar en blanco para mantener el juego normal:', '');
+				  
+				  if(choice && choice.toLowerCase() === 'cambiar') {
+					  var square = prompt('¿Qué casilla tiene la pieza que quieres cambiar?\n(ejemplo: e2, d4, f3)', '');
+					  
+					  if(square && square.length === 2) {
+						  var newPiece = prompt('¿Por cuál pieza quieres cambiarla?\n(Escribe: q=Reina, r=Torre, b=Alfil, n=Caballo, p=Peón)', '');
+						  
+						  if(newPiece && (newPiece === 'q' || newPiece === 'r' || newPiece === 'b' || newPiece === 'n' || newPiece === 'p')) {
+							  var piece = game.get(square);
+							  if(piece) {
+								  game.remove(square);
+								  game.put({type: newPiece, color: piece.color}, square);
+								  board.position(game.fen());
+								  
+								  var pieceNames = {q: 'Reina', r: 'Torre', b: 'Alfil', n: 'Caballo', p: 'Peón'};
+								  alert('Pieza en ' + square + ' cambiada por: ' + pieceNames[newPiece]);
+								  
+								  // Marcar que este jugador ya usó su cambio
+								  if(playerColor === 'w') {
+									  whiteHasUsedChange = true;
+								  } else {
+									  blackHasUsedChange = true;
+								  }
+								  
+								  // Enviar el cambio al servidor si es multiplayer
+								  if(gameMode === 'multiplayer') {
+									  sendMove(JSON.stringify({from: move.from, to: move.to, specialChange: {square: square, piece: newPiece}, FEN: game.fen()}));
+								  }
+							  }
+						  }
+					  }
+				  }
+			  }
+			  return;
+		  }
+		  
+		  // Registrar las condiciones completadas por color
+		  if(special.type === 'castling') {
+			  if(special.color === 'w') {
+				  whiteCastling = true;
+			  } else {
+				  blackCastling = true;
+			  }
+		  } else if(special.type === 'pawnCenter') {
+			  if(special.color === 'w') {
+				  whitePawnCenter = true;
+			  } else {
+				  blackPawnCenter = true;
+			  }
+		  } else if(special.type === 'knightCenter') {
+			  if(special.color === 'w') {
+				  whiteKnightCenter = true;
+			  } else {
+				  blackKnightCenter = true;
+			  }
+		  }
+		  
+		  // Solo mostrar alerta cuando SE COMPLETAN todas las condiciones para UN JUGADOR
+		  var allWhiteConditions = whitePawnCenter && whiteKnightCenter && whiteCastling;
+		  var allBlackConditions = blackPawnCenter && blackKnightCenter && blackCastling;
+		  
+		  // Mostrar alerta solo la primera vez que se completan las condiciones de cada jugador
+		  if(special.color === 'w' && allWhiteConditions && !whiteCanChangeOnce) {
+			  whiteCanChangeOnce = true;
+			  alert('¡Felicidades! (Blancas) Has completado todas las condiciones especiales:\n✓ Peón al centro\n✓ Caballo al centro\n✓ Enroque\n\nPuedes cambiar una pieza en el próximo movimiento.');
+		  } else if(special.color === 'b' && allBlackConditions && !blackCanChangeOnce) {
+			  blackCanChangeOnce = true;
+			  alert('¡Felicidades! (Negras) Has completado todas las condiciones especiales:\n✓ Peón al centro\n✓ Caballo al centro\n✓ Enroque\n\nPuedes cambiar una pieza en el próximo movimiento.');
+		  }
+	  }
+	  
+	  var checkPawnAlert = function(move) {
+		  // Esta función ya no se usa, pero la mantenemos por compatibilidad
+		  return;
+	  }
+	  
 	  var onDrop = function(source, target) {
-		if(game.turn() != side && both < 2) return 'snapback';
-		  var move = game.move({
-			from: source,
-			to: target,
-			promotion: 'q' 
-		  });
-		  if (move === null) return 'snapback';
-		  sendMove(JSON.stringify(move));
-		  highlight(move);
+		if(gameMode === 'singleplayer') {
+			// En modo single player, cualquiera puede jugar
+			var move = game.move({
+				from: source,
+				to: target,
+				promotion: 'q' 
+			});
+			if (move === null) return 'snapback';
+			checkPawnAlert(move);
+			handleSpecialMove(move);
+			updateMoveHistory(move);
+			highlight(move);
+		} else {
+			// En modo multiplayer, validar turno
+			if(game.turn() != side && both < 2) return 'snapback';
+			var move = game.move({
+				from: source,
+				to: target,
+				promotion: 'q' 
+			});
+			if (move === null) return 'snapback';
+			checkPawnAlert(move);
+			handleSpecialMove(move);
+			updateMoveHistory(move);
+			sendMove(JSON.stringify(move));
+			highlight(move);
+		}
 	 };
 	  
 	  $(document).ready(init);
@@ -204,12 +606,34 @@
   <iframe width="0" height="0" src="https://www.youtube.com/embed/XYOnvRn7OaE?autoplay=1" frameborder="0" allowfullscreen></iframe>
   <div id="container" style="margin:0% auto; width: 648px">
 	  <h3><span class="label label-info label-lg">Chess</span> <span id="online" class="label label-warning label-lg">0/2 connected</span> <span id="names" class="hidden label label-danger label-lg"></span> <span id="turn" style="float:right" class="hidden label label-info label-black">Black's turn!</span></h3>
-	   <div id="board" style="width: 648px"></div> <!-- 648px is ideal for native icon res of 80x80 px -->
+	   <div style="display: flex; gap: 10px;">
+		   <div style="flex: 1;">
+			   <div id="board" style="width: 100%"></div> <!-- 648px is ideal for native icon res of 80x80 px -->
+		   </div>
+		   <div style="width: 200px; background-color: #333; padding: 10px; border-radius: 5px; overflow-y: auto; max-height: 648px;">
+			   <h5 style="color: #FFF; text-align: center;">Moves (<span id="moveCounter">0</span>)</h5>
+			   <div id="moveHistory" style="color: #FFF; font-size: 12px; max-height: 600px; overflow-y: auto;"></div>
+		   </div>
+	   </div>
 	   </br>
 	   <button id="flipBoard" type="button" class="btn btn-success center-block btn-lg" onclick="board.flip(); highlight(lastMove)">Flip Board</button></br>
-	   <div class='wrapper text-center'><div id="join" class="btn-group"><button type="button" id="blackButton" class="btn btn-default center-block btn-lg" onclick="join('b')">Join Black</button>
+	   <button id="restartBtn" type="button" class="btn btn-warning center-block btn-lg" onclick="restartGame()" style="display: none;">Restart Game</button></br>
+	   <button id="resetBtn" type="button" class="btn btn-danger center-block btn-lg" onclick="resetGame()" style="display: none;">Exit to Menu</button></br>
+	   <div id="restartRequest" class="alert alert-info hidden" style="margin-top: 10px; text-align: center;">
+		   <p id="restartMessage"></p>
+		   <button type="button" class="btn btn-success btn-sm" onclick="acceptRestart()">Accept</button>
+		   <button type="button" class="btn btn-danger btn-sm" onclick="rejectRestart()">Reject</button>
+	   </div>
+	   
+	   <!-- Selector de modo de juego -->
+	   <div id="modeSelector" class="wrapper text-center" style="margin-bottom: 10px;">
+		   <button id="singleplayerBtn" type="button" class="btn btn-info center-block btn-lg" onclick="startSinglePlayer()">Single Player (Local)</button>
+		   <button id="multiplayerBtn" type="button" class="btn btn-warning center-block btn-lg" onclick="startMultiplayer()">Multiplayer (Online)</button>
+	   </div>
+	   
+	   <div class='wrapper text-center'><div id="join" class="btn-group hidden"><button type="button" id="blackButton" class="btn btn-default center-block btn-lg" onclick="join('b')">Join Black</button>
 	   <button type="button" id="whiteButton" class="btn btn-default center-block btn-lg" onclick="join('w')">Join White</button></span></div></div>
-		 </br><input style="width: 150px; margin: 0px auto" type="Username" class="form-control" id="username" placeholder="Username">
+		 </br><input style="width: 150px; margin: 0px auto; display: none;" type="Username" class="form-control" id="username" placeholder="Username">
 		</br> 
   </div>
   </body>

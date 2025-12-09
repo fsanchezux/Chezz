@@ -2,7 +2,7 @@ var connect = require('connect');
 var http = require('http');
 var url = require('url');
 var fs = require('fs');
-
+const PORT = process.env.PORT || 4000;
 var myModule = require('./myModule');
 
 var app = connect()
@@ -91,5 +91,5 @@ app.use(function(req, res){
 		}
  });
  
-//create node.js http server and listen on port 
-server.listen(80);
+
+server.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
