@@ -13,56 +13,141 @@ var wss = new WebSocketServer({ server: server});
 
 String.prototype.contains = function(s) { return this.indexOf(s) != -1; }
 
-var FEN = ["rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"]; // the FEN stack maintained by the server, useful for sending the n-1'th FEN and then playing a move on the clientside so the highlighting isn't bugged
-var lastMsg; // the last message
+// Rooms system - each room has its own game state
+var rooms = {};
 
-var white; var black;
+function getRoom(roomId) {
+	if(!rooms[roomId]) {
+		rooms[roomId] = {
+			FEN: ["rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"],
+			lastMsg: null,
+			white: null,
+			black: null,
+			clients: []
+		};
+	}
+	return rooms[roomId];
+}
+
+function broadcastToRoom(roomId, msg) {
+	var room = rooms[roomId];
+	if(room && room.clients) {
+		room.clients.forEach(function(client) {
+			if(client.readyState === 1) { // OPEN state
+				client.send(msg);
+			}
+		});
+	}
+}
 
 wss.on('connection', function(ws) {
 	console.log('Client connected ' + new Date());
-	if(FEN.length > 1) {
-		console.log("Sending data to new player.");
-		broadcast(JSON.stringify({lastMove: lastMsg, FEN : FEN[FEN.length-2], currentFEN : FEN[FEN.length-1], online: wss.clients.length, white: white, black: black})); // update the FEN for everyone, send the n'th and n-1'th FEN
-	} else {
-		broadcast(JSON.stringify({FEN: FEN[0], currentFEN : FEN[0], online: wss.clients.length, white: white, black: black}));
-		console.log("Sending default data.");
-	}
-	
+	ws.roomId = null; // Will be set when client joins a room
+
 	ws.on('message', function(msg) {
 		var o = JSON.parse(msg);
+
+		// Handle room join
+		if(o.joinRoom) {
+			ws.roomId = o.joinRoom;
+			var room = getRoom(ws.roomId);
+
+			// Add client to room
+			if(!room.clients.includes(ws)) {
+				room.clients.push(ws);
+			}
+
+			console.log('Client joined room: ' + ws.roomId);
+
+			// Send current room state to new client
+			if(room.FEN.length > 1) {
+				ws.send(JSON.stringify({
+					lastMove: room.lastMsg,
+					FEN: room.FEN[room.FEN.length-2],
+					currentFEN: room.FEN[room.FEN.length-1],
+					online: room.clients.length,
+					white: room.white,
+					black: room.black
+				}));
+			} else {
+				ws.send(JSON.stringify({
+					FEN: room.FEN[0],
+					currentFEN: room.FEN[0],
+					online: room.clients.length,
+					white: room.white,
+					black: room.black
+				}));
+			}
+			return;
+		}
+
+		// All other messages require a room
+		if(!ws.roomId) {
+			console.log('Message received without room assignment');
+			return;
+		}
+
+		var room = getRoom(ws.roomId);
+
+		// Handle username/color assignment
 		if(o.username) {
-			console.log(o);
-			if(o.color == 'w' && !white) {
-				if(black != o.username) {
-					white = o.username;
-					broadcast(JSON.stringify({white:o.username, black: black}));
+			console.log('User joining:', o);
+			if(o.color == 'w' && !room.white) {
+				if(room.black != o.username) {
+					room.white = o.username;
+					broadcastToRoom(ws.roomId, JSON.stringify({white: o.username, black: room.black}));
 				}
-			} else if(o.color == 'b' && !black) {
-				if(white != o.username) {
-					black = o.username;
-					broadcast(JSON.stringify({black:o.username, white: white}));
+			} else if(o.color == 'b' && !room.black) {
+				if(room.white != o.username) {
+					room.black = o.username;
+					broadcastToRoom(ws.roomId, JSON.stringify({black: o.username, white: room.white}));
 				}
 			}
 		} else {
+			// Handle game moves
 			if(o.FEN != null) {
-				if(FEN[FEN.length-1] != o.FEN && FEN.indexOf(o.FEN) == -1) {
-					FEN.push(o.FEN);
+				if(room.FEN[room.FEN.length-1] != o.FEN && room.FEN.indexOf(o.FEN) == -1) {
+					room.FEN.push(o.FEN);
 				}
-				lastMsg = o;
-				console.log("FEN stack looks like:");
-				console.log(FEN);
+				room.lastMsg = o;
+				console.log("Room " + ws.roomId + " FEN stack:", room.FEN.length);
 			}
-			broadcast(msg);
+			broadcastToRoom(ws.roomId, msg);
 		}
 	})
-	
+
 	ws.on('close', function() {
-		if(wss.clients.length < 2) {
-			white = null;
-			black = null;
-			lastMsg = null;
-			FEN = ["rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"];
-			broadcast(JSON.stringify({FEN: FEN[0], currentFEN : FEN[0], online: wss.clients.length, white: white, black: black})); 
+		if(ws.roomId) {
+			var room = getRoom(ws.roomId);
+
+			// Remove client from room
+			var index = room.clients.indexOf(ws);
+			if(index > -1) {
+				room.clients.splice(index, 1);
+			}
+
+			console.log('Client disconnected from room: ' + ws.roomId);
+
+			// Reset room if less than 2 clients
+			if(room.clients.length < 2) {
+				room.white = null;
+				room.black = null;
+				room.lastMsg = null;
+				room.FEN = ["rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"];
+				broadcastToRoom(ws.roomId, JSON.stringify({
+					FEN: room.FEN[0],
+					currentFEN: room.FEN[0],
+					online: room.clients.length,
+					white: room.white,
+					black: room.black
+				}));
+			}
+
+			// Clean up empty rooms
+			if(room.clients.length === 0) {
+				delete rooms[ws.roomId];
+				console.log('Room deleted: ' + ws.roomId);
+			}
 		}
 	})
 });

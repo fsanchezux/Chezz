@@ -1,50 +1,525 @@
 <html>
   <head>
-	<script src="js/chessboard-0.3.0.js"></script>
-	<script src="js/jquery-2.1.4.min.js"></script>
-	<script src="js/chess.js"></script>
-	<link rel="stylesheet" href="css/chessboard-0.3.0.css" />
-	<link rel="stylesheet" href="css/bootstrap.min.css">
-	<style> 
-		.highlight-white {
-			background-color: #CED26B;
-		}
-		
-		.highlight-black {
-			background-color: #AAA23B;
-		}
-		
-		.label-black {
-			background-color: #000;
-			color: #FFF;
-		}
-		
-		.label-white {
-			background-color: #FFF;
-			color: #404040;
-		}
-		
-		.btn-black {
-			background-color: #000;
-			border-color: #000;
-			color: #FFF;
-		}
-		
-		.btn:focus {
-			color: #FFF;
-		}
-		
-		.btn-white {
-			background-color: #FFF;
-			border-color: #FFF;
-			color: #404040;
-		}
-	</style>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<!-- Bootstrap CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+	<!-- Chessboard CSS -->
+	<link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+
+	<!-- Custom CSS -->
+	<link rel="stylesheet" href="css/custom-chess.css" />
+
 	<title>Chess</title>
+
+	<!-- jQuery (must be loaded before other scripts) -->
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+	<!-- Bootstrap JS -->
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+	<!-- Chess.js library -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+	<!-- Chessboard.js library -->
+	<script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+
     <script>
-      var ws = new WebSocket('ws://localhost:4000' );
-	  
-	  var board = null, game = null, lastSquareTo, lastSquareFrom = null, currentSide = null;
+      // ============ THEME PALETTES ============
+      // Light theme
+      var lightTheme = {
+        primary: '#0056b3',      // Dark blue
+        secondary: '#6c757d',    // Gray
+        success: '#28a745',      // Green
+        danger: '#dc3545',       // Red
+        warning: '#ffc107',      // Yellow
+        info: '#17a2b8',         // Cyan
+        dark: '#f8f9fa',         // Light gray
+        darker: '#e9ecef',       // Lighter gray
+        light: '#ffffff',        // White
+        gold: '#ff8c00',         // Orange-gold
+        
+        boardBg: '#f5f5f5',      // Light board background
+        panelBg: '#ffffff',      // White panel
+        modalBg: '#ffffff',      // White modal
+        text: '#212529',         // Dark text
+        textDark: '#000',        // Black text
+        border: '#dee2e6',       // Light border
+        borderLight: '#adb5bd',  // Medium border
+        highlight: '#fff3cd',    // Light yellow highlight
+        highlightDark: '#ffe5cc' // Light orange highlight
+      };
+
+      // Dark theme
+      var darkTheme = {
+        primary: '#007BFF',      // Blue
+        secondary: '#6c757d',    // Gray
+        success: '#28a745',      // Green
+        danger: '#dc3545',       // Red
+        warning: '#ffc107',      // Yellow
+        info: '#17a2b8',         // Cyan
+        dark: '#1d1f21',         // Very dark
+        darker: '#0a0a0a',       // Almost black
+        light: '#f8f9fa',        // Off-white
+        gold: '#FFD700',         // Gold
+        
+        boardBg: '#1d1f21',      // Dark board background
+        panelBg: '#2a2a2a',      // Dark panel
+        modalBg: '#2a2a2a',      // Dark modal
+        text: '#FFF',            // White text
+        textDark: '#000',        // Black text
+        border: '#555',          // Dark border
+        borderLight: '#777',     // Light border
+        highlight: '#CED26B',    // Light highlight
+        highlightDark: '#AAA23B' // Dark highlight
+      };
+
+      // Current theme (default: dark)
+      var currentTheme = darkTheme;
+      var isDarkMode = true;
+
+      // Function to apply theme to CSS variables
+      function applyTheme(theme) {
+        var root = document.documentElement;
+        root.style.setProperty('--color-primary', theme.primary);
+        root.style.setProperty('--color-secondary', theme.secondary);
+        root.style.setProperty('--color-success', theme.success);
+        root.style.setProperty('--color-danger', theme.danger);
+        root.style.setProperty('--color-warning', theme.warning);
+        root.style.setProperty('--color-info', theme.info);
+        root.style.setProperty('--color-dark', theme.dark);
+        root.style.setProperty('--color-darker', theme.darker);
+        root.style.setProperty('--color-light', theme.light);
+        root.style.setProperty('--color-gold', theme.gold);
+        root.style.setProperty('--color-border', theme.border);
+        root.style.setProperty('--color-text', theme.text);
+        root.style.setProperty('--color-highlight', theme.highlight);
+        root.style.setProperty('--color-highlight-dark', theme.highlightDark);
+      }
+
+      // Function to toggle theme
+      function toggleTheme() {
+        if(isDarkMode) {
+          currentTheme = lightTheme;
+          isDarkMode = false;
+          localStorage.setItem('chessTheme', 'light');
+          document.body.style.backgroundColor = lightTheme.dark;
+          document.getElementById('themeToggleBtn').textContent = '🌙 Dark Mode';
+        } else {
+          currentTheme = darkTheme;
+          isDarkMode = true;
+          localStorage.setItem('chessTheme', 'dark');
+          document.body.style.backgroundColor = darkTheme.dark;
+          document.getElementById('themeToggleBtn').textContent = '☀️ Light Mode';
+        }
+        applyTheme(currentTheme);
+      }
+
+      // Load saved theme preference on page load
+      function loadThemePreference() {
+        var savedTheme = localStorage.getItem('chessTheme');
+        if(savedTheme === 'light') {
+          currentTheme = lightTheme;
+          isDarkMode = false;
+          document.body.style.backgroundColor = lightTheme.dark;
+          if(document.getElementById('themeToggleBtn')) {
+            document.getElementById('themeToggleBtn').textContent = '🌙 Dark Mode';
+          }
+        } else {
+          currentTheme = darkTheme;
+          isDarkMode = true;
+          document.body.style.backgroundColor = darkTheme.dark;
+          if(document.getElementById('themeToggleBtn')) {
+            document.getElementById('themeToggleBtn').textContent = '☀️ Light Mode';
+          }
+        }
+        applyTheme(currentTheme);
+      }
+
+	  // Toast notification system
+	  var toastQueue = [];
+	  var toastShowing = false;
+
+	  function showToast(message, duration) {
+		if(!duration) duration = 3000;
+		toastQueue.push({message: message, duration: duration});
+		if(!toastShowing) {
+			showNextToast();
+		}
+	  }
+
+	  function showNextToast() {
+		if(toastQueue.length === 0) {
+			toastShowing = false;
+			return;
+		}
+
+		toastShowing = true;
+		var toast = toastQueue.shift();
+
+		// Create toast element
+		var toastEl = document.createElement('div');
+		toastEl.className = 'toast-notification';
+		toastEl.textContent = toast.message;
+		document.body.appendChild(toastEl);
+
+		// Trigger animation
+		setTimeout(function() {
+			toastEl.classList.add('show');
+		}, 10);
+
+		// Remove after duration
+		setTimeout(function() {
+			toastEl.classList.remove('show');
+			setTimeout(function() {
+				document.body.removeChild(toastEl);
+				showNextToast();
+			}, 300);
+		}, toast.duration);
+	  }
+
+      // ======================================
+
+      // ============ GAME MODE MENU FUNCTIONS ============
+      // Check if joining an existing room from URL
+      var urlParams = new URLSearchParams(window.location.search);
+      var gameSessionId = urlParams.get('room') || 'game_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      var selectedGameMode = null;
+      var selectedMultiplayerColor = null; // 'w' or 'b'
+      var waitingForOpponent = false; // True when waiting for second player
+      var bothPlayersConnected = false; // True when both players are in the game
+
+      function selectGameMode(mode) {
+        selectedGameMode = mode;
+        if(mode === 'singleplayer') {
+          showSinglePlayerNamesModal();
+        } else if(mode === 'multiplayer') {
+          showMultiplayerSetup();
+        }
+      }
+
+      function selectMultiplayerColor(color) {
+        selectedMultiplayerColor = color;
+        // Update button styles
+        var whiteBtn = document.getElementById('multiplayerWhiteBtn');
+        var blackBtn = document.getElementById('multiplayerBlackBtn');
+
+        if(color === 'w') {
+          whiteBtn.classList.add('selected');
+          whiteBtn.style.borderColor = 'var(--color-gold)';
+          whiteBtn.style.backgroundColor = 'rgba(255, 215, 0, 0.2)';
+          blackBtn.classList.remove('selected');
+          blackBtn.style.borderColor = 'var(--color-border)';
+          blackBtn.style.backgroundColor = 'rgba(0,0,0,0.3)';
+        } else {
+          blackBtn.classList.add('selected');
+          blackBtn.style.borderColor = 'var(--color-gold)';
+          blackBtn.style.backgroundColor = 'rgba(255, 215, 0, 0.2)';
+          whiteBtn.classList.remove('selected');
+          whiteBtn.style.borderColor = 'var(--color-border)';
+          whiteBtn.style.backgroundColor = 'rgba(0,0,0,0.3)';
+        }
+      }
+
+      function showSinglePlayerNamesModal() {
+        document.getElementById('mainMenuModal').classList.remove('active');
+        document.getElementById('singleplayerNamesModal').classList.add('active');
+      }
+
+      function selectOpponentType(type) {
+        // Update visual selection
+        var humanOption = document.getElementById('humanOption');
+        var aiOption = document.getElementById('aiOption');
+        var humanInputs = document.getElementById('humanPlayerInputs');
+        var aiInputs = document.getElementById('aiPlayerInputs');
+
+        if(type === 'human') {
+          humanOption.classList.add('selected');
+          aiOption.classList.remove('selected');
+          humanInputs.style.display = 'block';
+          aiInputs.style.display = 'none';
+          isAIGame = false;
+        } else {
+          aiOption.classList.add('selected');
+          humanOption.classList.remove('selected');
+          humanInputs.style.display = 'none';
+          aiInputs.style.display = 'block';
+          isAIGame = true;
+        }
+      }
+
+      function selectPlayerColor(color) {
+        playerColor = color;
+        aiColor = color === 'w' ? 'b' : 'w';
+
+        // Update button styles
+        var whiteBtn = document.getElementById('playAsWhite');
+        var blackBtn = document.getElementById('playAsBlack');
+
+        if(color === 'w') {
+          whiteBtn.classList.remove('modal-btn-secondary');
+          whiteBtn.classList.add('modal-btn-primary');
+          blackBtn.classList.remove('modal-btn-primary');
+          blackBtn.classList.add('modal-btn-secondary');
+        } else {
+          blackBtn.classList.remove('modal-btn-secondary');
+          blackBtn.classList.add('modal-btn-primary');
+          whiteBtn.classList.remove('modal-btn-primary');
+          whiteBtn.classList.add('modal-btn-secondary');
+        }
+      }
+
+      function confirmPlayerNames() {
+        if(isAIGame) {
+          // AI Game setup
+          var playerName = document.getElementById('playerNameInput').value.trim();
+
+          if(!playerName) {
+            showToast('Please enter your name');
+            return;
+          }
+
+          if(playerColor === 'w') {
+            player1Name = playerName;
+            player2Name = '🤖 Computer';
+          } else {
+            player1Name = '🤖 Computer';
+            player2Name = playerName;
+          }
+
+          // Update player names on board
+          document.getElementById('whitePlayerName').textContent = player1Name + ' (White)';
+          document.getElementById('blackPlayerName').textContent = player2Name + ' (Black)';
+        } else {
+          // Human vs Human setup
+          var player1 = document.getElementById('player1NameInput').value.trim();
+          var player2 = document.getElementById('player2NameInput').value.trim();
+
+          if(!player1 || !player2) {
+            showToast('Please enter names for both players');
+            return;
+          }
+
+          player1Name = player1;
+          player2Name = player2;
+
+          // Update player names on board
+          document.getElementById('whitePlayerName').textContent = player1Name + ' (White)';
+          document.getElementById('blackPlayerName').textContent = player2Name + ' (Black)';
+        }
+
+		// Reset XP at game start
+		whiteXP = 0;
+		blackXP = 0;
+		updateXPDisplay();
+
+        document.getElementById('mainMenuModal').classList.remove('active');
+        document.getElementById('singleplayerNamesModal').classList.remove('active');
+        document.getElementById('multiplayerSetupModal').classList.remove('active');
+        document.getElementById('gameContainer').style.display = 'block';
+        // Hide the mode selector since we already selected single player
+        document.getElementById('modeSelector').style.display = 'none';
+        // Hide the multiplayer join section
+        document.getElementById('join').classList.add('hidden');
+        gameMode = 'singleplayer';
+
+        // Show singleplayer buttons
+        document.getElementById('undoBtn').style.display = 'block';
+        document.getElementById('restartBtn').style.display = 'block';
+        document.getElementById('resetBtn').style.display = 'block';
+        document.getElementById('surrenderBtn').style.display = 'none';
+
+        // Reset all special move variables
+        gameEnded = false;
+        moveCount = 0;
+        moveHistory = [];
+        specialMoveDetected = false;
+        whitePawnCenter = false;
+        whiteKnightCenter = false;
+        whiteCastling = false;
+        whiteCanChangeOnce = false;
+        whiteHasUsedChange = false;
+        blackPawnCenter = false;
+        blackKnightCenter = false;
+        blackCastling = false;
+        blackCanChangeOnce = false;
+        blackHasUsedChange = false;
+        lastMove = null;
+        lastSquareTo = null;
+        lastSquareFrom = null;
+        restartRequested = false;
+        restartAccepted = false;
+
+        // Initialize side for singleplayer (white always starts)
+        side = 'w';
+
+        // Inicializar el tablero si no está iniciado
+        if(!game) {
+          init();
+        }
+
+        // If AI plays white, make first move
+        if(isAIGame && aiColor === 'w') {
+          setTimeout(makeAIMove, 500);
+        }
+      }
+
+      function showMultiplayerSetup() {
+        document.getElementById('mainMenuModal').classList.remove('active');
+        document.getElementById('singleplayerNamesModal').classList.remove('active');
+        document.getElementById('multiplayerSetupModal').classList.add('active');
+        updateGameLink();
+
+        // If joining from a link, show appropriate message
+        var isJoining = urlParams.get('room') !== null;
+        if(isJoining) {
+          // Second player joining - hide color selection, will be assigned automatically
+          document.querySelector('#multiplayerSetupModal h3').textContent = 'Join Multiplayer Game';
+          document.getElementById('gameLinkSection').style.display = 'none';
+          document.getElementById('joiningRoomMessage').style.display = 'block';
+          document.getElementById('colorSelectionDiv').style.display = 'none';
+          document.getElementById('startMultiplayerBtn').textContent = 'Join Game';
+          showToast('Joining game room...');
+          // Color will be assigned automatically as opposite of host
+          selectedMultiplayerColor = null; // Will be set after we know host's color
+        } else {
+          // First player creating room - show color selection
+          document.querySelector('#multiplayerSetupModal h3').textContent = 'Multiplayer Game Setup';
+          document.getElementById('gameLinkSection').style.display = 'block';
+          document.getElementById('joiningRoomMessage').style.display = 'none';
+          document.getElementById('colorSelectionDiv').style.display = 'block';
+          document.getElementById('startMultiplayerBtn').textContent = 'Start Game';
+
+          // Set white as default selection for host
+          selectedMultiplayerColor = 'w';
+          selectMultiplayerColor('w');
+        }
+      }
+
+      function backToMainMenu() {
+        document.getElementById('multiplayerSetupModal').classList.remove('active');
+        document.getElementById('singleplayerNamesModal').classList.remove('active');
+        document.getElementById('mainMenuModal').classList.add('active');
+        selectedGameMode = null;
+      }
+
+      // Check if user is joining via link on page load
+      window.addEventListener('load', function() {
+        if(urlParams.get('room')) {
+          // User is joining via shared link
+          setTimeout(function() {
+            showMultiplayerSetup();
+          }, 100);
+        }
+      });
+
+      function updateGameLink() {
+        var baseUrl = window.location.origin + window.location.pathname;
+        var gameLink = baseUrl + '?room=' + gameSessionId;
+        document.getElementById('gameLink').value = gameLink;
+      }
+
+      function copyGameLink() {
+        var gameLinkInput = document.getElementById('gameLink');
+        gameLinkInput.select();
+        document.execCommand('copy');
+        showToast('Game link copied to clipboard!');
+      }
+
+      function showWaitingOverlay() {
+        var overlay = document.getElementById('waitingOverlay');
+        if(overlay) {
+          // Update the link in the waiting overlay
+          var baseUrl = window.location.origin + window.location.pathname;
+          var gameLink = baseUrl + '?room=' + gameSessionId;
+          document.getElementById('waitingGameLink').value = gameLink;
+          overlay.style.display = 'flex';
+        }
+      }
+
+      function copyWaitingLink() {
+        var gameLinkInput = document.getElementById('waitingGameLink');
+        gameLinkInput.select();
+        document.execCommand('copy');
+        showToast('Game link copied! Share it with your friend.');
+      }
+
+      function hideWaitingOverlay() {
+        var overlay = document.getElementById('waitingOverlay');
+        if(overlay) {
+          overlay.style.display = 'none';
+        }
+        bothPlayersConnected = true;
+        waitingForOpponent = false;
+      }
+
+      function startMultiplayerGame() {
+        var username = document.getElementById('usernameInput').value.trim();
+        if(!username) {
+          showToast('Please enter your name');
+          return;
+        }
+
+        var isJoining = urlParams.get('room') !== null;
+
+        // Only validate color if creating a new game (host)
+        if(!isJoining && !selectedMultiplayerColor) {
+          showToast('Please select a color (White or Black)');
+          return;
+        }
+
+        name = username;
+        document.getElementById('mainMenuModal').classList.remove('active');
+        document.getElementById('multiplayerSetupModal').classList.remove('active');
+        document.getElementById('gameContainer').style.display = 'block';
+        gameMode = 'multiplayer';
+
+        // Hide the mode selector
+        document.getElementById('modeSelector').style.display = 'none';
+
+        // Inicializar el tablero si no está iniciado
+        if(!game) {
+          init();
+        }
+
+        // Join the room first, then assign color
+        setTimeout(function() {
+          if(ws.readyState === WebSocket.OPEN) {
+            // First join the room
+            ws.send(JSON.stringify({ joinRoom: gameSessionId }));
+
+            // For joining player, wait to receive room info and assign opposite color
+            if(isJoining) {
+              // Guest will auto-join after receiving room state
+              waitingForOpponent = false;
+              bothPlayersConnected = false;
+
+              // Give time to receive room state, then auto-join
+              setTimeout(function() {
+                // We'll trigger join based on the room state received
+                console.log('Guest ready to join, waiting for room state...');
+              }, 200);
+            } else {
+              // Host starts waiting for opponent
+              waitingForOpponent = true;
+              showWaitingOverlay();
+
+              // Host joins with selected color
+              setTimeout(function() {
+                join(selectedMultiplayerColor);
+              }, 200);
+            }
+          } else {
+            showToast('Connecting to server...');
+            setTimeout(startMultiplayerGame, 500);
+          }
+        }, 100);
+      }
+      // ======================================
+
+      var ws = new WebSocket('ws://localhost:4000' );	  var board = null, game = null, lastSquareTo, lastSquareFrom = null, currentSide = null;
 	  var lastMove = null;
 	  var side;
 	  var both = 0;
@@ -52,11 +527,47 @@
 	  var gameMode = null; // 'multiplayer' o 'singleplayer'
 	  var player1Name = "";
 	  var player2Name = "";
+	  var isAIGame = false; // Si el jugador está contra la IA
+	  var aiColor = 'b'; // Color de la IA (por defecto negras)
+	  var aiThinking = false; // Prevenir múltiples movimientos de IA simultáneos
+	  var playerColor = 'w'; // Color del jugador humano cuando juega vs IA
 	  var restartRequested = false;
 	  var restartAccepted = false;
 	  var moveCount = 0;
 	  var moveHistory = [];
 	  var specialMoveDetected = false;
+	  var isDragging = false;
+	  var ignoreClicks = false;
+	  var gameEnded = false; // Track if game has ended to prevent duplicate modals
+	  var changeMode = false; // Track if we're in change piece mode
+	  var whiteskill1 = false;
+	  var whiteskill2 = false;
+	  var whiteskill3 = false;
+	  var blackskill1 = false;
+	  var blackskill2 = false;
+	  var blackskill3 = false;
+
+	  // Skill 2 variables (unlocked at 50 XP)
+	  var whiteSkill2Unlocked = false;
+	  var blackSkill2Unlocked = false;
+	  var whiteSkill2Choice = null; // 'freeze' or 'upgrade'
+	  var blackSkill2Choice = null; // 'freeze' or 'upgrade'
+	  var whiteSkill2Used = false;
+	  var blackSkill2Used = false;
+	  var whiteFreezeActive = false; // Time freeze active
+	  var blackFreezeActive = false; // Time freeze active
+
+	  var selectedSquareForChange = null; // The square of the piece to change
+	  var changeColorPending = null; // Which color is pending a change
+	  var boardFlipped = false; // Track if board is flipped
+ 	  // Experience points per player
+ 	  var whiteXP = 0;
+ 	  var blackXP = 0;
+	  
+	  // Variables para el modal de cambio de pieza
+	  var selectedPieceForChange = null;
+	  var currentPlayerForChange = null;
+	  var currentMoveForChange = null;
 	  
 	  // Condiciones especiales por color
 	  var whitePawnCenter = false;
@@ -75,6 +586,12 @@
 	    move = JSON.parse(message.data);
 		console.log(move);
 		
+		// Ignore messages if game hasn't been initialized yet
+		if(!game && !move.restartRequest && !move.restartAccepted && !move.restartRejected && move.from) {
+			console.log('Game not initialized yet, ignoring move');
+			return;
+		}
+		
 		// Manejar solicitud de reinicio
 		if(move.restartRequest) {
 			$("#restartMessage").html(move.player + ' solicita reiniciar la partida. ¿Aceptas?');
@@ -92,12 +609,94 @@
 		
 		// Manejar rechazo de reinicio
 		if(move.restartRejected) {
-			alert(move.player + ' rechazó el reinicio');
+			showToast(move.player + ' rechazó el reinicio');
 			restartRequested = false;
 			restartAccepted = false;
 			return;
 		}
-		
+
+		// Manejar solicitud de rendición
+		if(move.surrenderRequest) {
+			var surrenderingColor = move.playerColor === 'w' ? 'White' : 'Black';
+			$("#surrenderMessage").html(move.player + ' (' + surrenderingColor + ') quiere rendirse. ¿Aceptas su rendición?');
+			$("#surrenderRequest").removeClass("hidden");
+			surrenderRequested = true;
+			return;
+		}
+
+		// Manejar aceptación de rendición
+		if(move.surrenderAccepted) {
+			surrenderAccepted = true;
+			performSurrender();
+			return;
+		}
+
+		// Manejar rechazo de rendición
+		if(move.surrenderRejected) {
+			showToast(move.player + ' rechazó la rendición');
+			surrenderRequested = false;
+			surrenderAccepted = false;
+			return;
+		}
+
+		// Handle piece change from other player (priority handling)
+		if(move.specialChange && !move.from && !move.to) {
+			console.log('Received specialChange from opponent:', move.specialChange);
+
+			// If FEN is provided, load it first to ensure correct board state
+			if(move.FEN) {
+				game.load(move.FEN);
+				board.position(game.fen());
+			} else {
+				// Apply change manually if no FEN provided
+				var targetSquare = move.specialChange.square;
+				var currentPiece = game.get(targetSquare);
+
+				if(currentPiece) {
+					if(currentPiece.type === 'k') {
+						console.log('Remote specialChange targets king at ' + targetSquare + ' - skipped');
+					} else {
+						var color = currentPiece.color;
+						game.remove(targetSquare);
+						game.put({type: move.specialChange.piece, color: color}, targetSquare);
+						board.position(game.fen());
+						console.log('Applied piece change:', targetSquare, 'to', move.specialChange.piece);
+					}
+				}
+			}
+
+			showToast('Opponent changed a piece!');
+
+			// Mark that this color has used their change
+			if(move.color === 'w') {
+				whiteHasUsedChange = true;
+			} else if(move.color === 'b') {
+				blackHasUsedChange = true;
+			}
+			updateChangeModeButtons();
+			return;
+		}
+
+		// Handle skill2 selection from other player
+		if(move.skill2Selection) {
+			if(move.skill2Selection.color === 'w') {
+				whiteSkill2Choice = move.skill2Selection.choice;
+				if(move.skill2Selection.choice === 'upgrade') {
+					whiteHasUsedChange = false;
+				}
+			} else {
+				blackSkill2Choice = move.skill2Selection.choice;
+				if(move.skill2Selection.choice === 'upgrade') {
+					blackHasUsedChange = false;
+				}
+			}
+			var choiceName = move.skill2Selection.choice === 'freeze' ? 'Congelar Tiempo' : 'Mejorar Cambio';
+			showToast((move.skill2Selection.color === 'w' ? 'White' : 'Black') + ' eligió: ' + choiceName);
+			updateChangeModeButtons();
+			if(typeof updateSkill2Buttons === 'function') updateSkill2Buttons();
+			return;
+		}
+
 		if(!move.white || !move.black) {
 			$("#turn").addClass("hidden"); // game hasn't started yet
 		}
@@ -105,34 +704,112 @@
 		if(move.white || move.black) {
 			if(move.white) {
 				$("#whiteButton").addClass("active");
-			} else if(move.black) {
+			}
+			if(move.black) {
 				$("#blackButton").addClass("active");
 			}
 
-			if(move.white == name) { 
+			// Update names display immediately
+			var whiteDisplay = move.white || "Waiting...";
+			var blackDisplay = move.black || "Waiting...";
+			$("#names").removeClass("hidden");
+			$("#names").html(whiteDisplay + " vs " + blackDisplay);
+
+			// Assign side to current player
+			if(move.white == name) {
 				side = 'w';
 			} else if(move.black == name) {
 				side = 'b';
 				if(board.orientation() == "white") board.flip();
 			}
+
+			// If joining player and don't have a color yet, assign opposite color
+			if(gameMode === 'multiplayer' && !side && name) {
+				var shouldJoin = false;
+				var colorToJoin = null;
+
+				// Determine opposite color
+				if(move.white && !move.black) {
+					// Host is white, we are black
+					selectedMultiplayerColor = 'b';
+					colorToJoin = 'b';
+					shouldJoin = true;
+				} else if(move.black && !move.white) {
+					// Host is black, we are white
+					selectedMultiplayerColor = 'w';
+					colorToJoin = 'w';
+					shouldJoin = true;
+				}
+
+				// Join with determined color
+				if(shouldJoin && colorToJoin) {
+					console.log('Auto-joining as ' + colorToJoin + ' (opposite of host)');
+					setTimeout(function() {
+						join(colorToJoin);
+					}, 100);
+				}
+			}
+
+			// Update player names in sidebar
+			// In multiplayer: current player always at bottom (white position), opponent at top (black position)
+			if(gameMode === 'multiplayer' && side && move.white && move.black) {
+				if(side === 'w') {
+					// I'm white - my name at bottom, opponent at top
+					document.getElementById('whitePlayerName').textContent = move.white + ' (White) - You';
+					document.getElementById('blackPlayerName').textContent = move.black + ' (Black)';
+				} else if(side === 'b') {
+					// I'm black - my name at bottom, opponent at top
+					document.getElementById('whitePlayerName').textContent = move.black + ' (Black) - You';
+					document.getElementById('blackPlayerName').textContent = move.white + ' (White)';
+				}
+			} else {
+				// Single player or not fully connected yet - show normally
+				if(move.white) {
+					document.getElementById('whitePlayerName').textContent = move.white + ' (White)';
+				}
+				if(move.black) {
+					document.getElementById('blackPlayerName').textContent = move.black + ' (Black)';
+				}
+			}
+
+			// Both players are now connected!
 			if(move.white && move.black) {
-				updateTurnButton();	
+				updateTurnButton();
 				$("#join").addClass("hidden");
 				$("#whiteButton").addClass("active");
 				$("#blackButton").addClass("active");
-				$("#names").removeClass("hidden");
 				$("#names").html(move.white + " vs " + move.black);
 				$("#username").addClass("hidden");
+
+				// Show multiplayer buttons
+				document.getElementById('restartBtn').style.display = 'block';
+				document.getElementById('resetBtn').style.display = 'block';
+				document.getElementById('surrenderBtn').style.display = 'block';
+				document.getElementById('undoBtn').style.display = 'none';
+
+				// In multiplayer, swap skill button positions if player is black
+				if(gameMode === 'multiplayer' && side === 'b') {
+					// Swap the skill buttons so player's skills are at bottom
+					swapSkillButtons();
+				}
+
+				// Hide waiting overlay and enable game
+				hideWaitingOverlay();
+				showToast('Both players connected! Game starts now!');
 			}
 		}
 		
 		if(move.online) $("#online").html(move.online + "/2 connected");
-		if(move.currentFEN != null) {
+		if(move.currentFEN != null && game) {
 			if(move.currentFEN != game.fen()) {
 				console.log("Updating inconsistent FEN");
 				board.position(move.FEN); // n-1'th FEN
 				move = move.lastMove;
 				if(move.from && move.to) {
+				clearClickHighlights();
+				// Temporarily disable clicks to avoid accidental highlights while updating
+				ignoreClicks = true;
+				setTimeout(function(){ ignoreClicks = false; }, 300);
 					board.move(move.from + '-' + move.to);
 					game.move({
 						from: move.from,
@@ -141,6 +818,8 @@
 					 });
 					highlight(move);
 					updateMoveHistory(move);
+					// Grant experience to the player who moved
+					if(move && move.color) addExperience(move.color, 3);
 					board.position(move.currentFEN);
 					game.load(move.FEN);
 					if(move.promotion && (move.promotion === 'n' || move.promotion === 'b')) {
@@ -148,20 +827,32 @@
 					}
 					// Aplicar cambio especial si fue hecho por el otro jugador
 					if(move.specialChange) {
-						game.remove(move.specialChange.square);
-						var piece = board.position()[move.specialChange.square];
-						if(piece) {
-							var color = piece.color;
-							game.put({type: move.specialChange.piece, color: color}, move.specialChange.square);
-							board.position(game.fen());
+						var targetSquare = move.specialChange.square;
+						var currentPiece = game.get(targetSquare);
+						if(currentPiece) {
+							// Do not allow special change to affect the king
+							if(currentPiece.type === 'k') {
+								console.log('Remote specialChange targets king at ' + targetSquare + ' - skipped');
+							} else {
+								var color = currentPiece.color;
+								game.remove(targetSquare);
+								game.put({type: move.specialChange.piece, color: color}, targetSquare);
+								board.position(game.fen());
+							}
 						}
 					}
+					// Check for checkmate or stalemate
+					checkGameStatus();
 					return;
 				} 
 			}
 		}
 		if(move.from && move.to) {
-				board.move(move.from + '-' + move.to);
+			clearClickHighlights();
+			// Temporarily disable clicks to avoid accidental highlights while updating
+			ignoreClicks = true;
+			setTimeout(function(){ ignoreClicks = false; }, 300);
+					board.move(move.from + '-' + move.to);
 				game.move({
 					from: move.from,
 					to: move.to,
@@ -169,21 +860,30 @@
 				 });
 				board.position(board.fen());
 				highlight(move);
-				updateMoveHistory(move);
+					updateMoveHistory(move);
+					// Grant experience to the player who moved
+					if(move && move.color) addExperience(move.color, 3);
 				if(move.promotion && (move.promotion === 'n' || move.promotion === 'b')) {
 					applyPromotion(move.to, move.promotion, game.fen().split(' ')[1] === 'w' ? 'b' : 'w');
 				}
 				// Aplicar cambio especial si fue hecho por el otro jugador
 				// Aplicar cambio especial si fue hecho por el otro jugador
 				if(move.specialChange) {
-					game.remove(move.specialChange.square);
-					var piece = board.position()[move.specialChange.square];
-					if(piece) {
-						var color = piece.color;
-						game.put({type: move.specialChange.piece, color: color}, move.specialChange.square);
-						board.position(game.fen());
+					var targetSquare = move.specialChange.square;
+					var currentPiece = game.get(targetSquare);
+					if(currentPiece) {
+						if(currentPiece.type === 'k') {
+							console.log('Remote specialChange targets king at ' + targetSquare + ' - skipped');
+						} else {
+							var color = currentPiece.color;
+							game.remove(targetSquare);
+							game.put({type: move.specialChange.piece, color: color}, targetSquare);
+							board.position(game.fen());
+						}
 					}
 				}
+				// Check for checkmate or stalemate
+				checkGameStatus();
 		} 
 		
       };
@@ -194,71 +894,108 @@
         ws.send(JSON.stringify(move));
       }
 	  
+	  var updateChangeModeButtons = function() {
+		var whiteBtn = document.getElementById('activateChangeModeWhite');
+		var blackBtn = document.getElementById('activateChangeModeBlack');
+		if (!whiteBtn || !blackBtn || !game) return;
+
+		// In multiplayer, hide opponent's button
+		if(gameMode === 'multiplayer' && side) {
+			if(side === 'w') {
+				blackBtn.style.display = 'none';
+				whiteBtn.style.display = 'inline-flex';
+			} else if(side === 'b') {
+				whiteBtn.style.display = 'none';
+				blackBtn.style.display = 'inline-flex';
+			}
+		} else {
+			// Show both in single player
+			whiteBtn.style.display = 'inline-flex';
+			blackBtn.style.display = 'inline-flex';
+		}
+
+		if (changeMode) {
+			whiteBtn.disabled = true;
+			blackBtn.disabled = true;
+			return;
+		}
+		var whiteCan = (typeof whiteXP !== 'undefined' ? whiteXP : 0) >= 21 && !whiteHasUsedChange;
+		var blackCan = (typeof blackXP !== 'undefined' ? blackXP : 0) >= 21 && !blackHasUsedChange;
+		if (game.turn() === 'w') {
+			whiteBtn.disabled = !whiteCan;
+			blackBtn.disabled = true;
+		} else if (game.turn() === 'b') {
+			whiteBtn.disabled = true;
+			blackBtn.disabled = !blackCan;
+		}
+	  }
+
 	  var updateTurnButton = function() {
+		// Check and clear freeze effects when turn changes
+		if(typeof checkAndClearFreeze === 'function') checkAndClearFreeze();
+
 		if(game.turn() == 'w') {
 			$("#turn").removeClass("hidden");
-			$("#turn").html("White's turn!");
-			$("#turn").removeClass("label-black"); 
+			var text = "White's turn!";
+			if(game.in_check()) {
+				text += " (In check)";
+			}
+			if(isTimeFrozen()) {
+				text += " ⏸️ (Time Frozen!)";
+			}
+			$("#turn").html(text);
+			$("#turn").removeClass("label-black");
 			$("#turn").addClass("label-white");
 		} else if(game.turn() == 'b') {
 			$("#turn").removeClass("hidden");
-			$("#turn").html("Black's turn!");
-			$("#turn").removeClass("label-white"); 
+			var text = "Black's turn!";
+			if(game.in_check()) {
+				text += " (In check)";
+			}
+			if(isTimeFrozen()) {
+				text += " ⏸️ (Time Frozen!)";
+			}
+			$("#turn").html(text);
+			$("#turn").removeClass("label-white");
 			$("#turn").addClass("label-black");
 		}
+		updateChangeModeButtons();
+		if (typeof startPlayerTimer === 'function') startPlayerTimer();
 	  }
 	  
 	  var join = function (side) {
-			name = $("#username").val();
+			// Use the global name variable if username input is empty (for auto-join)
+			var username = $("#username").val();
+			if(!username || username.length === 0) {
+				username = name; // Use global name set in startMultiplayerGame
+			} else {
+				name = username; // Update global name
+			}
+
 			both++;
-			if (name.length > 0) {
+			console.log('join() called with side:', side, 'username:', username);
+
+			if (username && username.length > 0) {
 				if (ws.readyState === WebSocket.OPEN) {
-					ws.send(JSON.stringify({ username: name, color: side }));
+					console.log('Sending username and color to server:', { username: username, color: side });
+					ws.send(JSON.stringify({ username: username, color: side }));
 				} else {
 					console.log('WebSocket not ready yet, retrying in 100ms...');
-					setTimeout(join, 100); // retry after short delay
+					setTimeout(function() { join(side); }, 100); // retry after short delay
 				}
-
+			} else {
+				console.log('ERROR: No username available in join()');
 			}
 		}
 	  
 	  var startSinglePlayer = function() {
-		  var p1 = prompt('Nombre del Jugador 1 (Blancas):', '');
-		  if(!p1 || p1.length === 0) return;
-		  
-		  var p2 = prompt('Nombre del Jugador 2 (Negras):', '');
-		  if(!p2 || p2.length === 0) return;
-		  
-		  gameMode = 'singleplayer';
-		  player1Name = p1;
-		  player2Name = p2;
-		  side = 'w'; // Empezar como blancas
-		  
-		  $("#join").addClass("hidden");
-		  $("#username").addClass("hidden");
-		  $("#singleplayerBtn").addClass("hidden");
-		  $("#multiplayerBtn").addClass("hidden");
-		  $("#modeSelector").addClass("hidden");
-		  $("#names").removeClass("hidden");
-		  $("#names").html(player1Name + " vs " + player2Name);
-		  $("#names").removeClass("label-danger");
-		  $("#names").addClass("label-info");
-		  $("#resetBtn").show();
-		  $("#restartBtn").show();
-		  
-		  board.orientation('white');
-		  updateTurnButton();
+		  // Legacy function - use main menu instead
+		  return;
 	  }
 	  
 	  var startMultiplayer = function() {
-		  gameMode = 'multiplayer';
-		  $("#join").removeClass("hidden");
-		  $("#username").removeClass("hidden");
-		  $("#singleplayerBtn").addClass("hidden");
-		  $("#multiplayerBtn").addClass("hidden");
-		  $("#modeSelector").addClass("hidden");
-		  $("#resetBtn").show();
-		  $("#restartBtn").show();
+		  // Legacy function - use main menu instead
+		  return;
 	  }
 	  
 	  var resetGame = function() {
@@ -277,6 +1014,34 @@
 		  moveCount = 0;
 		  moveHistory = [];
 		  specialMoveDetected = false;
+		  gameEnded = false;
+		  boardFlipped = false;
+
+		  // Reset AI variables
+		  isAIGame = false;
+		  aiColor = 'b';
+		  aiThinking = false;
+		  playerColor = 'w';
+
+		  // Reset change mode
+		  changeMode = false;
+		  selectedSquareForChange = null;
+		  changeColorPending = null;
+		  // Reset XP
+		  whiteXP = 0;
+		  blackXP = 0;
+		  updateXPDisplay();
+
+		  // Reset Skill2 variables
+		  whiteSkill2Unlocked = false;
+		  blackSkill2Unlocked = false;
+		  whiteSkill2Choice = null;
+		  blackSkill2Choice = null;
+		  whiteSkill2Used = false;
+		  blackSkill2Used = false;
+		  whiteFreezeActive = false;
+		  blackFreezeActive = false;
+
 		  whitePawnCenter = false;
 		  whiteKnightCenter = false;
 		  whiteCastling = false;
@@ -287,20 +1052,82 @@
 		  blackCastling = false;
 		  blackCanChangeOnce = false;
 		  blackHasUsedChange = false;
-		  
-		  $("#join").addClass("hidden");
-		  $("#username").addClass("hidden");
-		  $("#names").addClass("hidden");
-		  $("#turn").addClass("hidden");
-		  $("#singleplayerBtn").removeClass("hidden");
-		  $("#multiplayerBtn").removeClass("hidden");
-		  $("#modeSelector").removeClass("hidden");
-		  $("#resetBtn").hide();
-		  $("#restartBtn").hide();
-		  $("#restartRequest").addClass("hidden");
-		  $("#moveCounter").html("0");
-		  $("#moveHistory").html("");
+
+		  // Reset and stop timers
+		  if(typeof stopPlayerTimer === 'function') stopPlayerTimer();
+		  if(typeof resetTimers === 'function') resetTimers();
+
+		  // Hide game container and show main menu
+		  document.getElementById('gameContainer').style.display = 'none';
+		  document.getElementById('mainMenuModal').classList.add('active');
+		  document.getElementById('modeSelector').style.display = 'block';
+
+		  // Hide game control buttons
+		  document.getElementById('undoBtn').style.display = 'none';
+		  document.getElementById('restartBtn').style.display = 'none';
+		  document.getElementById('resetBtn').style.display = 'none';
+		  document.getElementById('surrenderBtn').style.display = 'none';
+
+		  // Clear move history display
+		  $("#moveHistory").html('');
+		  $("#moveCounter").html('0');
+
 		  board.orientation('white');
+	  }
+	  
+	  var flipBoardAndNames = function() {
+		  // Flip the visual board
+		  board.flip();
+		  boardFlipped = !boardFlipped;
+
+		  // Swap the displayed names so they stay on the correct side after a flip.
+		  var whiteNameEl = document.getElementById('whitePlayerName');
+		  var blackNameEl = document.getElementById('blackPlayerName');
+		  if(whiteNameEl && blackNameEl) {
+			  var tmp = whiteNameEl.textContent;
+			  whiteNameEl.textContent = blackNameEl.textContent;
+			  blackNameEl.textContent = tmp;
+		  }
+
+		  // Re-highlight last move after flip
+		  highlight(lastMove);
+	  }
+	  
+	  var undoMove = function() {
+		  if(gameMode === 'singleplayer') {
+			  if(game.history().length === 0) {
+				  showToast('No moves to undo');
+				  return;
+			  }
+			  
+			  // Retroceder un movimiento
+			  game.undo();
+			  
+			  // Actualizar el tablero
+			  board.position(game.fen());
+			  
+			  // Actualizar el historial visual
+			  moveHistory.pop();
+			  moveCount--;
+			  
+			  // Limpiar highlights
+			  if(lastSquareTo) { lastSquareTo.removeClass('highlight-black'); lastSquareTo.removeClass('highlight-white'); }
+			  if(lastSquareFrom) { lastSquareFrom.removeClass('highlight-black'); lastSquareFrom.removeClass('highlight-white'); }
+			  lastMove = null;
+			  
+			  // Reconstruir el historial visual
+			  var historyHtml = '';
+			  for(var i = 0; i < moveHistory.length; i++) {
+				  historyHtml += '<div style="padding: 5px; border-bottom: 1px solid #555;">' + 
+								 '<strong>' + (i+1) + '.</strong> ' + moveHistory[i] + 
+								 '</div>';
+			  }
+			  $("#moveHistory").html(historyHtml);
+			  $("#moveCounter").html(moveCount);
+			  
+			  // Actualizar el botón de turno
+			  updateTurnButton();
+		  }
 	  }
 	  
 	  var restartGame = function() {
@@ -309,15 +1136,73 @@
 			  game = new Chess();
 			  board.position('start');
 			  lastMove = null;
+			  moveCount = 0;
+			  moveHistory = [];
+			  gameEnded = false;
+			  aiThinking = false; // Reset AI thinking state
+
+			  // Reset change mode
+			  changeMode = false;
+			  selectedSquareForChange = null;
+			  changeColorPending = null;
+			  // Reset XP
+			  whiteXP = 0;
+			  blackXP = 0;
+			  updateXPDisplay();
+
+			  // Reset Skill2 variables
+			  whiteSkill2Unlocked = false;
+			  blackSkill2Unlocked = false;
+			  whiteSkill2Choice = null;
+			  blackSkill2Choice = null;
+			  whiteSkill2Used = false;
+			  blackSkill2Used = false;
+			  whiteFreezeActive = false;
+			  blackFreezeActive = false;
+
+			  // Reset special moves
+			  whitePawnCenter = false;
+			  whiteKnightCenter = false;
+			  whiteCastling = false;
+			  whiteCanChangeOnce = false;
+			  whiteHasUsedChange = false;
+			  blackPawnCenter = false;
+			  blackKnightCenter = false;
+			  blackCastling = false;
+			  blackCanChangeOnce = false;
+			  blackHasUsedChange = false;
+
+			  // Limpiar highlights
+			  var squares = $('#board').find('[class*="square-"]');
+			  squares.each(function() {
+				  $(this).removeClass('highlight-black').removeClass('highlight-white');
+			  });
 			  lastSquareTo = null;
 			  lastSquareFrom = null;
+
+			  // Limpiar historial visual
+			  $("#moveHistory").html('');
+			  $("#moveCounter").html('0');
+
+			  // Reset missions display
+			  resetMissionsDisplay();
+
+			  // Reset and restart timers
+			  if(typeof resetTimers === 'function') resetTimers();
+			  if(typeof startPlayerTimer === 'function') startPlayerTimer();
+
 			  updateTurnButton();
+
+			  // If AI plays white, make first move after restart
+			  if(isAIGame && aiColor === 'w') {
+				  setTimeout(makeAIMove, 500);
+			  }
 		  } else if(gameMode === 'multiplayer') {
 			  // En modo multiplayer, enviar solicitud de reinicio
 			  restartRequested = true;
 			  restartAccepted = false;
 			  ws.send(JSON.stringify({restartRequest: true, player: name}));
-			  alert('Solicitud de reinicio enviada. Esperando confirmación del otro jugador...');
+			  showToast('Solicitud de reinicio enviada. Esperando confirmación del otro jugador...');
 		  }
 	  }
 	  
@@ -337,9 +1222,56 @@
 		  restartAccepted = false;
 		  $("#restartRequest").addClass("hidden");
 		  ws.send(JSON.stringify({restartRejected: true, player: name}));
-		  alert('Reinicio rechazado');
+		  showToast('Reinicio rechazado');
 	  }
-	  
+
+	  // Surrender functions
+	  var surrenderRequested = false;
+	  var surrenderAccepted = false;
+
+	  var requestSurrender = function() {
+		  if(gameMode === 'multiplayer') {
+			  surrenderRequested = true;
+			  surrenderAccepted = false;
+			  ws.send(JSON.stringify({surrenderRequest: true, player: name, playerColor: side}));
+			  showToast('Solicitud de rendición enviada...');
+		  }
+	  }
+
+	  var acceptSurrender = function() {
+		  surrenderAccepted = true;
+		  $("#surrenderRequest").addClass("hidden");
+		  ws.send(JSON.stringify({surrenderAccepted: true, player: name}));
+
+		  // End the game - the player who requested surrender loses
+		  if(surrenderRequested && surrenderAccepted) {
+			  performSurrender();
+		  }
+	  }
+
+	  var rejectSurrender = function() {
+		  surrenderRequested = false;
+		  surrenderAccepted = false;
+		  $("#surrenderRequest").addClass("hidden");
+		  ws.send(JSON.stringify({surrenderRejected: true, player: name}));
+		  showToast('Rendición rechazada - el juego continúa');
+	  }
+
+	  var performSurrender = function() {
+		  // Determine winner based on who surrendered
+		  // The surrendering player's opponent wins
+		  gameEnded = true;
+		  surrenderRequested = false;
+		  surrenderAccepted = false;
+		  $("#surrenderRequest").addClass("hidden");
+
+		  // Show surrender modal
+		  var surrenderModal = document.getElementById('surrenderModal');
+		  if(surrenderModal) {
+			  surrenderModal.classList.add('active');
+		  }
+	  }
+
 	  var performRestart = function() {
 		  game = new Chess();
 		  board.position('start');
@@ -352,6 +1284,22 @@
 		  moveCount = 0;
 		  moveHistory = [];
 		  specialMoveDetected = false;
+		  gameEnded = false;
+		  // Reset XP
+		  whiteXP = 0;
+		  blackXP = 0;
+		  updateXPDisplay();
+
+		  // Reset Skill2 variables
+		  whiteSkill2Unlocked = false;
+		  blackSkill2Unlocked = false;
+		  whiteSkill2Choice = null;
+		  blackSkill2Choice = null;
+		  whiteSkill2Used = false;
+		  blackSkill2Used = false;
+		  whiteFreezeActive = false;
+		  blackFreezeActive = false;
+
 		  whitePawnCenter = false;
 		  whiteKnightCenter = false;
 		  whiteCastling = false;
@@ -364,10 +1312,38 @@
 		  blackHasUsedChange = false;
 		  $("#moveCounter").html("0");
 		  $("#moveHistory").html("");
+
+		  // Reset and restart timers
+		  if(typeof resetTimers === 'function') resetTimers();
+		  if(typeof startPlayerTimer === 'function') startPlayerTimer();
+
 		  updateTurnButton();
+		  if(typeof updateSkill2Buttons === 'function') updateSkill2Buttons();
 	  }
 	  
+	  // Clear click-based highlights (used to show legal moves on click)
+	  var clearClickHighlights = function() {
+		  // remove classes from any square elements
+		  $('#board').find('[class*="square-"]').removeClass('click-highlight click-source');
+	  }
+
+	  // Show legal moves for a given square (adds click-highlight to target squares)
+	  var showLegalMoves = function(square) {
+		  clearClickHighlights();
+		  if(!square) return;
+		  var moves = game.moves({square: square, verbose: true});
+		  if(!moves || moves.length === 0) return;
+		  // highlight source
+		  $('#board').find('.square-' + square).addClass('click-source');
+		  // highlight targets
+		  moves.forEach(function(m) {
+			  var sq = m.to;
+			  $('#board').find('.square-' + sq).addClass('click-highlight');
+		  });
+	  }
+
 	  var init = function() {
+	    // Theme already loaded, just initialize the game board
 	    game = new Chess();
 		board = ChessBoard('board', {
 			draggable: true,
@@ -379,21 +1355,113 @@
 			onSnapEnd: onSnapEnd
 		});
 		
-		// Mostrar opciones de modo al inicio
-		gameMode = null;
+		// Add click handler for change mode - click on board squares
+		$('#board').on('click', function(e) {
+			if(!changeMode) return;
+			
+			e.preventDefault();
+			e.stopPropagation();
+			
+			// Get the clicked element
+			var $target = $(e.target);
+			
+			// Find the square div by traversing up the DOM
+			var $squareDiv = $target.closest('[data-square]');
+			if(!$squareDiv.length) {
+				$squareDiv = $target;
+				// Look for square- class in the element or parents
+				while($squareDiv.length && !$squareDiv.attr('class')?.includes('square-')) {
+					$squareDiv = $squareDiv.parent();
+					if($squareDiv.attr('id') === 'board' || !$squareDiv.length) {
+						$squareDiv = $();
+						break;
+					}
+				}
+			}
+			
+			if($squareDiv.length) {
+				// Extract square name from data-square or class
+				var squareName = $squareDiv.data('square');
+				if(!squareName) {
+					var classes = $squareDiv.attr('class') || '';
+					var match = classes.match(/square-([a-h][1-8])/);
+					if(match) {
+						squareName = match[1];
+					}
+				}
+				if(squareName) {
+					console.log('Clicked square in change mode: ' + squareName);
+					selectPieceForChange(squareName);
+					return false;
+				}
+			}
+		});
+		
+		// Also listen for mousedown on pieces when in change mode
+		$(document).on('mousedown', '#board [data-piece], #board .piece', function(e) {
+			if(!changeMode) return;
+			
+			e.preventDefault();
+			e.stopPropagation();
+			
+			// Find parent square
+			var $target = $(this);
+			var $squareDiv = $target.closest('[data-square]');
+			if(!$squareDiv.length) {
+				$squareDiv = $target.parent();
+				while($squareDiv.length && !$squareDiv.attr('class')?.includes('square-')) {
+					$squareDiv = $squareDiv.parent();
+					if($squareDiv.attr('id') === 'board' || !$squareDiv.length) {
+						break;
+					}
+				}
+			}
+			
+			if($squareDiv.length) {
+				var squareName = $squareDiv.data('square');
+				if(!squareName) {
+					var classes = $squareDiv.attr('class') || '';
+					var match = classes.match(/square-([a-h][1-8])/);
+					if(match) {
+						squareName = match[1];
+					}
+				}
+				if(squareName) {
+					console.log('Mousedown on piece in change mode: ' + squareName);
+					selectPieceForChange(squareName);
+					return false;
+				}
+			}
+		});
+		
+		// Initialize side for singleplayer if not already set
+		if(gameMode === 'singleplayer' && !side) {
+			side = 'w';
+		}
+
+		// Update turn button to show whose turn it is
 		updateTurnButton();
 	  }	
 	  
 	  var onSnapEnd = function() {
+		clearClickHighlights();
+		isDragging = false;
 		board.position(game.fen());
 	  }
 	  
 	  var onDragStart = function(source, piece, position, orientation) {
+		  // If in change mode, prevent dragging and allow click selection instead
+		  if(changeMode) {
+			  console.log('onDragStart: changeMode is active, preventing drag for piece at ' + source);
+			  return false;
+		  }
+		  
 		  if (game.game_over() === true ||
 			  (game.turn() === 'w' && piece.search(/^b/) !== -1) ||
 			  (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
 			return false;
 		  }
+		  isDragging = true;
 	  };
 	  
 	  var highlight = function(move) {
@@ -411,37 +1479,47 @@
 		}
 	  }
 
-	  var applyPromotion = function(targetSquare, pieceType, color) {
-		  game.remove(targetSquare);
-		  game.put({type: pieceType, color: color}, targetSquare);
-		  board.position(game.fen());
-	  }
-	  
-	  var updateMoveHistory = function(move) {
-		  moveCount++;
-		  var moveNotation = move.from + ' → ' + move.to;
-		  if(move.captured) {
-			  moveNotation += ' (captures ' + move.captured + ')';
-		  }
-		  if(move.promotion) {
-			  moveNotation += ' (promotes to ' + move.promotion + ')';
-		  }
-		  
-		  moveHistory.push(moveNotation);
-		  
-		  // Actualizar el contador
-		  $("#moveCounter").html(moveCount);
-		  
-		  // Agregar el movimiento al historial visual
-		  var moveElement = '<div style="padding: 5px; border-bottom: 1px solid #555;">' + 
-						   '<strong>' + moveCount + '.</strong> ' + moveNotation + 
-						   '</div>';
-		  $("#moveHistory").append(moveElement);
-		  
-		  // Scroll al final del historial
-		  var moveHistoryDiv = $("#moveHistory");
-		  moveHistoryDiv.scrollTop(moveHistoryDiv[0].scrollHeight);
-	  }
+	  var applyPromotion = function (targetSquare, pieceType, color) {
+			game.remove(targetSquare);
+			game.put({ type: pieceType, color: color }, targetSquare);
+			board.position(game.fen());
+		}
+					
+	  var whiteCapturedCount = 0;
+var blackCapturedCount = 0;
+function updateCapturedDisplay() {
+    document.getElementById('whiteCapturedCount').textContent = whiteCapturedCount;
+    document.getElementById('blackCapturedCount').textContent = blackCapturedCount;
+}
+
+var updateMoveHistory = function(move) {
+    moveCount++;
+    var moveNotation = move.from + ' → ' + move.to;
+    if(move.captured) {
+        moveNotation += ' (captures ' + move.captured + ')';
+        if(move.color === 'w') whiteCapturedCount++;
+        else blackCapturedCount++;
+        updateCapturedDisplay();
+    }
+    if(move.promotion) {
+        moveNotation += ' (promotes to ' + move.promotion + ')';
+    }
+    
+    moveHistory.push(moveNotation);
+    
+    // Actualizar el contador
+    $("#moveCounter").html(moveCount);
+    
+    // Agregar el movimiento al historial visual
+    var moveElement = '<div style="padding: 5px; border-bottom: 1px solid #555;">' + 
+					   '<strong>' + moveCount + '.</strong> ' + moveNotation + 
+					   '</div>';
+    $("#moveHistory").append(moveElement);
+    
+    // Scroll al final del historial
+    var moveHistoryDiv = $("#moveHistory");
+    moveHistoryDiv.scrollTop(moveHistoryDiv[0].scrollHeight);
+}
 	  
 	  var isSpecialMove = function(move) {
 		  // Detectar si es un movimiento especial antes de 10 movimientos
@@ -474,57 +1552,6 @@
 	  var handleSpecialMove = function(move) {
 		  var special = isSpecialMove(move);
 		  if(!special) {
-			  // Si no es un movimiento especial pero ya se cumplieron las 3 condiciones,
-			  // mostrar opción de cambio SOLO SI:
-			  // 1. El jugador ha completado las 3 condiciones
-			  // 2. No ha usado el cambio todavía
-			  var playerColor = move.color;
-			  var hasAllConditions = false;
-			  var hasUsedChange = false;
-			  
-			  if(playerColor === 'w') {
-				  hasAllConditions = whitePawnCenter && whiteKnightCenter && whiteCastling;
-				  hasUsedChange = whiteHasUsedChange;
-			  } else {
-				  hasAllConditions = blackPawnCenter && blackKnightCenter && blackCastling;
-				  hasUsedChange = blackHasUsedChange;
-			  }
-			  
-			  if(hasAllConditions && !hasUsedChange) {
-				  var choice = prompt('¡Ya has completado todas las condiciones!\n\n¿Quieres cambiar una pieza por otra?\n1. Escribir "cambiar" para reemplazar una pieza\n2. Dejar en blanco para mantener el juego normal:', '');
-				  
-				  if(choice && choice.toLowerCase() === 'cambiar') {
-					  var square = prompt('¿Qué casilla tiene la pieza que quieres cambiar?\n(ejemplo: e2, d4, f3)', '');
-					  
-					  if(square && square.length === 2) {
-						  var newPiece = prompt('¿Por cuál pieza quieres cambiarla?\n(Escribe: q=Reina, r=Torre, b=Alfil, n=Caballo, p=Peón)', '');
-						  
-						  if(newPiece && (newPiece === 'q' || newPiece === 'r' || newPiece === 'b' || newPiece === 'n' || newPiece === 'p')) {
-							  var piece = game.get(square);
-							  if(piece) {
-								  game.remove(square);
-								  game.put({type: newPiece, color: piece.color}, square);
-								  board.position(game.fen());
-								  
-								  var pieceNames = {q: 'Reina', r: 'Torre', b: 'Alfil', n: 'Caballo', p: 'Peón'};
-								  alert('Pieza en ' + square + ' cambiada por: ' + pieceNames[newPiece]);
-								  
-								  // Marcar que este jugador ya usó su cambio
-								  if(playerColor === 'w') {
-									  whiteHasUsedChange = true;
-								  } else {
-									  blackHasUsedChange = true;
-								  }
-								  
-								  // Enviar el cambio al servidor si es multiplayer
-								  if(gameMode === 'multiplayer') {
-									  sendMove(JSON.stringify({from: move.from, to: move.to, specialChange: {square: square, piece: newPiece}, FEN: game.fen()}));
-								  }
-							  }
-						  }
-					  }
-				  }
-			  }
 			  return;
 		  }
 		  
@@ -549,92 +1576,1447 @@
 			  }
 		  }
 		  
-		  // Solo mostrar alerta cuando SE COMPLETAN todas las condiciones para UN JUGADOR
+		  // Actualizar el estado visual de las misiones
+		  updateMissionsDisplay();
+		  
+		  // Solo mostrar modal cuando SE COMPLETAN todas las condiciones para UN JUGADOR
 		  var allWhiteConditions = whitePawnCenter && whiteKnightCenter && whiteCastling;
 		  var allBlackConditions = blackPawnCenter && blackKnightCenter && blackCastling;
-		  
-		  // Mostrar alerta solo la primera vez que se completan las condiciones de cada jugador
-		  if(special.color === 'w' && allWhiteConditions && !whiteCanChangeOnce) {
-			  whiteCanChangeOnce = true;
-			  alert('¡Felicidades! (Blancas) Has completado todas las condiciones especiales:\n✓ Peón al centro\n✓ Caballo al centro\n✓ Enroque\n\nPuedes cambiar una pieza en el próximo movimiento.');
-		  } else if(special.color === 'b' && allBlackConditions && !blackCanChangeOnce) {
-			  blackCanChangeOnce = true;
-			  alert('¡Felicidades! (Negras) Has completado todas las condiciones especiales:\n✓ Peón al centro\n✓ Caballo al centro\n✓ Enroque\n\nPuedes cambiar una pieza en el próximo movimiento.');
-		  }
 	  }
+	  
+	  var updateMissionsDisplay = function() {
+	    // Update White Pawn Center mission
+	    var whitePawnStatus = document.getElementById('whitePawnStatus');
+	    if(whitePawnCenter && whitePawnStatus && !whitePawnStatus.classList.contains('completed')) {
+	      whitePawnStatus.textContent = '✅';
+		  addExperience('w', 1.5);
+		  whitePawnStatus.classList.add('completed');
+	    }
+
+		// Update White Knight Center mission
+		var whiteKnightStatus = document.getElementById('whiteKnightStatus');
+		if(whiteKnightCenter && whiteKnightStatus && !whiteKnightStatus.classList.contains('completed')) {
+			whiteKnightStatus.textContent = '✅';
+			addExperience('w', 1.5);
+			whiteKnightStatus.classList.add('completed');
+		}
+
+		// Update White Castling mission
+		var whiteCastlingStatus = document.getElementById('whiteCastlingStatus');
+		if(whiteCastling && whiteCastlingStatus && !whiteCastlingStatus.classList.contains('completed')) {
+			whiteCastlingStatus.textContent = '✅';
+			addExperience('w', 1.5);
+			whiteCastlingStatus.classList.add('completed');
+		}
+
+		// Update Black Pawn Center mission
+		var blackPawnStatus = document.getElementById('blackPawnStatus');
+		if(blackPawnCenter && blackPawnStatus && !blackPawnStatus.classList.contains('completed')) {
+			blackPawnStatus.textContent = '✅';
+			addExperience('b', 1.5);
+			blackPawnStatus.classList.add('completed');
+		}
+
+		// Update Black Knight Center mission
+		var blackKnightStatus = document.getElementById('blackKnightStatus');
+		if(blackKnightCenter && blackKnightStatus && !blackKnightStatus.classList.contains('completed')) {
+			blackKnightStatus.textContent = '✅';
+			addExperience('b', 1.5);
+			blackKnightStatus.classList.add('completed');
+		}
+
+		// Update Black Castling mission
+		var blackCastlingStatus = document.getElementById('blackCastlingStatus');
+		if(blackCastling && blackCastlingStatus && !blackCastlingStatus.classList.contains('completed')) {
+			blackCastlingStatus.textContent = '✅';
+			addExperience('b', 1.5);
+			blackCastlingStatus.classList.add('completed');
+		}
+	    
+	    // Show/hide activate change mode button if all missions completed
+	    var whiteComplete = whitePawnCenter && whiteKnightCenter && whiteCastling;
+	    var blackComplete = blackPawnCenter && blackKnightCenter && blackCastling;
+	    
+	    var activateBtn = document.getElementById('activateChangeMode');
+	    if(whiteComplete && !whiteHasUsedChange) {
+	      activateBtn.style.display = 'inline-block';
+	      activateBtn.textContent = '🔄 White - Activate Change Mode';
+	    } else if(blackComplete && !blackHasUsedChange) {
+	      activateBtn.style.display = 'inline-block';
+	      activateBtn.textContent = '🔄 Black - Activate Change Mode';
+	    } else {
+	      activateBtn.style.display = 'none';
+	    }
+	  }
+	  
+	  var resetMissionsDisplay = function() {
+	    // Reset White missions
+	    document.getElementById('whitePawnStatus').textContent = '⭕';
+	    document.getElementById('whiteKnightStatus').textContent = '⭕';
+	    document.getElementById('whiteCastlingStatus').textContent = '⭕';
+	    
+	    // Reset Black missions
+	    document.getElementById('blackPawnStatus').textContent = '⭕';
+	    document.getElementById('blackKnightStatus').textContent = '⭕';
+	    document.getElementById('blackCastlingStatus').textContent = '⭕';
+	    
+	    // Hide activate change mode button
+	    document.getElementById('activateChangeMode').style.display = 'none';
+	  }
+
+	  // Experience functions
+	var updateXPDisplay = function() {
+		var w = document.getElementById('whiteXP');
+		var b = document.getElementById('blackXP');
+		if(w) w.textContent = 'XP: ' + whiteXP;
+		if(b) b.textContent = 'XP: ' + blackXP;
+	}
+
+	// XP listeners system
+	var xpListeners = { white: [], black: [] };
+	function addXPListener(color, fn) {
+		xpListeners[color].push(fn);
+	}
+	function notifyXPListeners(color, xp) {
+		xpListeners[color].forEach(function(fn) { fn(xp); });
+	}
+
+	var addExperience = function(color, amount) {
+		if(color === 'w') {
+			whiteXP += amount;
+			notifyXPListeners('white', whiteXP);
+		} else if(color === 'b') {
+			blackXP += amount;
+			notifyXPListeners('black', blackXP);
+		}
+		updateXPDisplay();
+	}
+
+	// Activate changeMode if XP > 21 for any player
+	addXPListener('white', function(xp) {
+		if(xp > 21 && !whiteskill1) {
+			whiteskill1 = true;
+			document.getElementById('activateChangeMode').style.display = 'block';
+			showToast('¡Has desbloqueado el cambio de pieza!');
+		}
+		// Unlock Skill 2 at 50 XP
+		if(xp >= 50 && !whiteSkill2Unlocked) {
+			whiteSkill2Unlocked = true;
+			showSkill2SelectionModal('w');
+		}
+	});
+	addXPListener('black', function(xp) {
+		if(xp > 21 && !blackskill1) {
+			blackskill1 = true;
+			document.getElementById('activateChangeMode').style.display = 'block';
+			showToast('¡Has desbloqueado el cambio de pieza!');
+		}
+		// Unlock Skill 2 at 50 XP
+		if(xp >= 50 && !blackSkill2Unlocked) {
+			blackSkill2Unlocked = true;
+			showSkill2SelectionModal('b');
+		}
+	});
+
+	// Skill 2 Selection Modal Functions
+	var currentSkill2Color = null;
+
+	var showSkill2SelectionModal = function(color) {
+		// If AI is playing this color, auto-select a random skill
+		if(isAIGame && color === aiColor) {
+			currentSkill2Color = color;
+			// Randomly choose between 'freeze' and 'upgrade'
+			var aiChoice = Math.random() < 0.5 ? 'freeze' : 'upgrade';
+			selectSkill2(aiChoice);
+			return;
+		}
+
+		currentSkill2Color = color;
+		var playerName = color === 'w' ? 'White' : 'Black';
+		document.getElementById('skill2PlayerName').textContent = playerName + ' has reached 50 XP! Choose your Level 2 skill:';
+		document.getElementById('skill2SelectionModal').classList.add('active');
+	}
+
+	var selectSkill2 = function(choice) {
+		if(!currentSkill2Color) return;
+
+		if(currentSkill2Color === 'w') {
+			whiteSkill2Choice = choice;
+			if(choice === 'upgrade') {
+				// Reset the change skill so they can use it again
+				whiteHasUsedChange = false;
+			}
+		} else {
+			blackSkill2Choice = choice;
+			if(choice === 'upgrade') {
+				// Reset the change skill so they can use it again
+				blackHasUsedChange = false;
+			}
+		}
+
+		// Send skill selection to other player in multiplayer
+		if(gameMode === 'multiplayer') {
+			ws.send(JSON.stringify({
+				skill2Selection: {
+					color: currentSkill2Color,
+					choice: choice
+				}
+			}));
+		}
+
+		document.getElementById('skill2SelectionModal').classList.remove('active');
+
+		var choiceName = choice === 'freeze' ? 'Congelar Tiempo' : 'Mejorar Cambio';
+		showToast((currentSkill2Color === 'w' ? 'White' : 'Black') + ' eligió: ' + choiceName);
+
+		currentSkill2Color = null;
+		updateChangeModeButtons();
+		if(typeof updateSkill2Buttons === 'function') updateSkill2Buttons();
+	}
+
+	// Time Freeze Functions
+	var activateTimeFreeze = function(color) {
+		if(color === 'w') {
+			if(whiteSkill2Choice !== 'freeze' || whiteSkill2Used) return;
+			whiteSkill2Used = true;
+			whiteFreezeActive = true;
+			showToast('⏸️ White ha congelado su propio tiempo por un turno!');
+		} else {
+			if(blackSkill2Choice !== 'freeze' || blackSkill2Used) return;
+			blackSkill2Used = true;
+			blackFreezeActive = true;
+			showToast('⏸️ Black ha congelado su propio tiempo por un turno!');
+		}
+	}
+
+	// Check if time should be frozen for the current turn
+	var isTimeFrozen = function() {
+		var currentTurn = game.turn();
+		// If it's white's turn and white has frozen their own time
+		if(currentTurn === 'w' && whiteFreezeActive) return true;
+		// If it's black's turn and black has frozen their own time
+		if(currentTurn === 'b' && blackFreezeActive) return true;
+		return false;
+	}
+
+	// Deactivate freeze after one turn
+	var checkAndClearFreeze = function() {
+		var currentTurn = game.turn();
+		// Clear white's freeze when it becomes black's turn
+		if(currentTurn === 'b' && whiteFreezeActive) {
+			whiteFreezeActive = false;
+			showToast('⏰ El congelamiento de tiempo de White ha terminado');
+		}
+		// Clear black's freeze when it becomes white's turn
+		if(currentTurn === 'w' && blackFreezeActive) {
+			blackFreezeActive = false;
+			showToast('⏰ El congelamiento de tiempo de Black ha terminado');
+		}
+	}
 	  
 	  var checkPawnAlert = function(move) {
 		  // Esta función ya no se usa, pero la mantenemos por compatibilidad
 		  return;
 	  }
+
 	  
+	  var deactivateChangeMode = function() {
+	    changeMode = false;
+	    selectedSquareForChange = null;
+	    changeColorPending = null;
+	    updateChangeModeButtons();
+	  }
+	  
+	  var selectPieceForChange = function(square) {
+	    if(!changeMode) return;
+	    
+	    var piece = game.get(square);
+	    if(!piece) {
+	      console.log('No piece on square: ' + square);
+	      return;
+	    }
+	    
+	    // Only allow selecting your own piece
+	    if(piece.color !== changeColorPending) {
+	      console.log('Wrong piece color. Selected: ' + piece.color + ', Expected: ' + changeColorPending);
+	      return;
+	    }
+
+	    // Do not allow changing the king
+	    if(piece.type === 'k') {
+	      console.log('Attempted to change king on ' + square + ' - not allowed');
+	      showToast('El rey no puede ser cambiado.');
+	      
+	      return;
+	    }
+	    
+	    console.log('Selected piece for change: ' + square + ' (' + piece.type + ')');
+	    selectedSquareForChange = square;
+	    showRoulette(piece.color);
+	  }
+	  
+	  var showRoulette = function(color) {
+	    // Show roulette modal with random selection
+	    var pieces;
+
+	    // Check if this player has upgraded their piece change skill
+	    var hasUpgrade = (color === 'w' && whiteSkill2Choice === 'upgrade') ||
+	                     (color === 'b' && blackSkill2Choice === 'upgrade');
+
+	    if(hasUpgrade) {
+	      // Upgraded version includes Bishop and Rook
+	      pieces = ['q', 'r', 'b', 'n']; // Queen, Rook, Bishop, Knight
+	    } else {
+	      // Basic version
+	      pieces = ['q', 'r', 'n']; // Queen, Rook, Knight
+	    }
+
+	    var randomPiece = pieces[Math.floor(Math.random() * pieces.length)];
+	    var pieceNames = {q: 'Queen', r: 'Rook', n: 'Knight', b: 'Bishop'};
+
+	    document.getElementById('rouletteTitle').textContent = 'Spinning Roulette...';
+	    document.getElementById('rouletteResult').textContent = 'Selected piece: ' + pieceNames[randomPiece];
+	    selectedPieceForChange = randomPiece;
+	    document.getElementById('rouletteModal').classList.add('active');
+
+	    // Auto-close after showing result
+	    setTimeout(function() {
+	      applyPieceChange();
+	    }, 2000);
+	  }
+	  
+	  var applyPieceChange = function() {
+	    if(!selectedSquareForChange || !selectedPieceForChange) return;
+
+	    var piece = game.get(selectedSquareForChange);
+	    if(piece) {
+	      // Prevent changing the king
+	      if(piece.type === 'k') {
+	        console.log('applyPieceChange: target is king, aborting change for ' + selectedSquareForChange);
+		    console.log('El rey no puede ser cambiado.');
+	        return;
+	      }
+	      game.remove(selectedSquareForChange);
+	      game.put({type: selectedPieceForChange, color: piece.color}, selectedSquareForChange);
+	      board.position(game.fen());
+
+	      // Send special change to other player in multiplayer mode
+	      if(gameMode === 'multiplayer') {
+	        var changeMessage = {
+	          specialChange: {
+	            square: selectedSquareForChange,
+	            piece: selectedPieceForChange
+	          },
+	          FEN: game.fen(),
+	          color: piece.color
+	        };
+	        ws.send(JSON.stringify(changeMessage));
+	      }
+
+	      // Marcar que este jugador ya gastó su cambio
+	      if(piece.color === 'w') {
+	        whiteHasUsedChange = true;
+	        // If this was an upgraded change (skill2), mark skill2 as used
+	        if(whiteSkill2Choice === 'upgrade') {
+	          whiteSkill2Used = true;
+	        }
+	      } else {
+	        blackHasUsedChange = true;
+	        // If this was an upgraded change (skill2), mark skill2 as used
+	        if(blackSkill2Choice === 'upgrade') {
+	          blackSkill2Used = true;
+	        }
+	      }
+	    }
+
+	    document.getElementById('rouletteModal').classList.remove('active');
+	    deactivateChangeMode();
+	    updateChangeModeButtons();
+	    if(typeof updateSkill2Buttons === 'function') updateSkill2Buttons();
+	  }
+	  
+	  // ============ AI FUNCTIONS ============
+	  var makeAIMove = function() {
+	    if(!isAIGame || aiThinking || gameEnded) return;
+	    if(game.turn() !== aiColor) return;
+
+	    aiThinking = true;
+
+	    // Check if AI should use a skill before moving
+	    aiConsiderUsingSkill();
+
+	    // Get all legal moves
+	    var possibleMoves = game.moves({verbose: true});
+
+	    if(possibleMoves.length === 0) {
+	      aiThinking = false;
+	      return;
+	    }
+
+	    // Simple AI: Pick a random legal move
+	    var randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+
+	    // Make the move after a delay to simulate thinking
+	    setTimeout(function() {
+	      var move = game.move({
+	        from: randomMove.from,
+	        to: randomMove.to,
+	        promotion: 'q' // Always promote to queen
+	      });
+
+	      if(move) {
+	        board.position(game.fen());
+	        handleSpecialMove(move);
+	        updateMoveHistory(move);
+	        if(move && move.color) addExperience(move.color, 3);
+	        highlight(move);
+	        checkGameStatus();
+	      }
+
+	      aiThinking = false;
+	    }, 300 + Math.random() * 700); // Random delay between 300-1000ms
+	  }
+
+	  // AI skill usage logic
+	  var aiConsiderUsingSkill = function() {
+	    if(!isAIGame) return;
+
+	    var aiSkillChoice = aiColor === 'w' ? whiteSkill2Choice : blackSkill2Choice;
+	    var aiSkillUsed = aiColor === 'w' ? whiteSkill2Used : blackSkill2Used;
+	    var aiHasUsedChange = aiColor === 'w' ? whiteHasUsedChange : blackHasUsedChange;
+	    var aiXP = aiColor === 'w' ? (typeof whiteXP === 'undefined' ? 0 : whiteXP) : (typeof blackXP === 'undefined' ? 0 : blackXP);
+
+	    // Use Skill 2 (freeze or upgrade) - 30% chance to use it when available
+	    if(aiSkillChoice && !aiSkillUsed && Math.random() < 0.3) {
+	      if(aiSkillChoice === 'freeze') {
+	        // Use time freeze
+	        activateSkill2ForColor(aiColor);
+	      } else if(aiSkillChoice === 'upgrade') {
+	        // Use upgraded change mode - will activate automatically when clicking the skill button
+	        activateSkill2ForColor(aiColor);
+	      }
+	    }
+	    // Use Skill 1 (change piece) - 20% chance when available and not used
+	    else if(aiXP >= 21 && !aiHasUsedChange && Math.random() < 0.2) {
+	      // Activate change mode for AI
+	      aiUseChangePiece();
+	    }
+	  }
+
+	  // AI uses change piece skill
+	  var aiUseChangePiece = function() {
+	    if(!isAIGame) return;
+
+	    // Find all AI pieces that can be changed (not king)
+	    var aiPieces = [];
+	    var board_state = game.board();
+
+	    for(var row = 0; row < 8; row++) {
+	      for(var col = 0; col < 8; col++) {
+	        var piece = board_state[row][col];
+	        if(piece && piece.color === aiColor && piece.type !== 'k') {
+	          var square = String.fromCharCode(97 + col) + (8 - row);
+	          aiPieces.push({square: square, type: piece.type});
+	        }
+	      }
+	    }
+
+	    if(aiPieces.length === 0) return;
+
+	    // Pick a random piece to change
+	    var selectedPiece = aiPieces[Math.floor(Math.random() * aiPieces.length)];
+
+	    // Activate change mode
+	    activateChangeModeForColor(aiColor);
+
+	    // Select the piece and new type
+	    selectedSquareForChange = selectedPiece.square;
+
+	    // Pick a random new piece type (excluding king and current type)
+	    var pieceTypes = ['q', 'r', 'b', 'n', 'p'];
+	    var validTypes = pieceTypes.filter(function(t) { return t !== selectedPiece.type; });
+	    var newType = validTypes[Math.floor(Math.random() * validTypes.length)];
+	    selectedPieceForChange = newType;
+
+	    // Apply the change directly without showing roulette
+	    setTimeout(function() {
+	      applyPieceChange();
+	      deactivateChangeMode();
+	    }, 500);
+	  }
+
+	  var checkGameStatus = function() {
+	    // Prevent showing multiple game over modals
+	    if(gameEnded) return;
+
+	    if(game.in_checkmate()) {
+	      gameEnded = true;
+	      var losingColor = game.turn() === 'w' ? 'White' : 'Black';
+	      var winningColor = game.turn() === 'w' ? 'Black' : 'White';
+	      showCheckmateModal(winningColor, losingColor);
+	    } else if(game.in_stalemate()) {
+	      gameEnded = true;
+	      showStalemateModal();
+	    } else if(game.in_draw() || game.in_threefold_repetition()) {
+	      gameEnded = true;
+	      showStalemateModal();
+	    } else {
+	      // Check if current player has any legal moves
+	      var moves = game.moves();
+	      if(moves.length === 0 && !game.in_check()) {
+	        // No legal moves and not in check = stalemate
+	        gameEnded = true;
+	        showStalemateModal();
+	      } else if(game.in_check()) {
+	        // Update turn button and indicate check
+	        var turnColor = game.turn() === 'w' ? 'White' : 'Black';
+	        $("#turn").removeClass("hidden");
+	        $("#turn").html(turnColor + " is in check!");
+	        $("#turn").removeClass("label-black");
+	        $("#turn").removeClass("label-white");
+	        if(game.turn() === 'w') {
+	          $("#turn").addClass("label-white");
+	        } else {
+	          $("#turn").addClass("label-black");
+	        }
+	      } else {
+	        updateTurnButton();
+	      }
+	    }
+
+	    // Check if it's AI's turn after game status update
+	    if(isAIGame && !gameEnded && game.turn() === aiColor) {
+	      setTimeout(makeAIMove, 500);
+	    }
+	  }
+	  
+	  var showCheckmateModal = function(winner, loser) {
+	    document.getElementById('gameOverTitle').textContent = '♔ Checkmate! ♔';
+	    document.getElementById('gameOverMessage').textContent = winner + ' wins! ' + loser + ' is checkmated.';
+	    document.getElementById('gameOverModal').classList.add('active');
+	  }
+	  
+	  var showStalemateModal = function() {
+	    document.getElementById('gameOverTitle').textContent = 'Stalemate';
+	    document.getElementById('gameOverMessage').textContent = 'The game is a draw. Stalemate occurred.';
+	    document.getElementById('gameOverModal').classList.add('active');
+	  }
+	  
+	  var closeGameOverModal = function() {
+	    document.getElementById('gameOverModal').classList.remove('active');
+	  }
+
+	  var closeSurrenderModal = function() {
+	    document.getElementById('surrenderModal').classList.remove('active');
+	  }
+
+
 	  var onDrop = function(source, target) {
+		clearClickHighlights();
 		if(gameMode === 'singleplayer') {
-			// En modo single player, cualquiera puede jugar
+			// En modo single player
+			// If AI game, prevent player from moving AI pieces
+			if(isAIGame) {
+				var piece = game.get(source);
+				if(piece && piece.color === aiColor) {
+					return 'snapback'; // Can't move AI pieces
+				}
+			}
+
 			var move = game.move({
 				from: source,
 				to: target,
-				promotion: 'q' 
+				promotion: 'q'
 			});
 			if (move === null) return 'snapback';
 			checkPawnAlert(move);
 			handleSpecialMove(move);
 			updateMoveHistory(move);
+			// Award XP for the move
+			if(move && move.color) addExperience(move.color, 3);
 			highlight(move);
+
+			// Check for checkmate or stalemate
+			checkGameStatus();
 		} else {
 			// En modo multiplayer, validar turno
+			// Block moves if waiting for opponent
+			if(waitingForOpponent || !bothPlayersConnected) {
+				showToast('Waiting for opponent to join...');
+				return 'snapback';
+			}
+
 			if(game.turn() != side && both < 2) return 'snapback';
 			var move = game.move({
 				from: source,
 				to: target,
-				promotion: 'q' 
+				promotion: 'q'
 			});
 			if (move === null) return 'snapback';
 			checkPawnAlert(move);
 			handleSpecialMove(move);
 			updateMoveHistory(move);
 			sendMove(JSON.stringify(move));
+			// Award XP for the move
+			if(move && move.color) addExperience(move.color, 3);
 			highlight(move);
+
+			// Check for checkmate or stalemate
+			checkGameStatus();
 		}
 	 };
 	  
-	  $(document).ready(init);
+	  $(document).ready(function() {
+	    loadThemePreference();
+	    updateXPDisplay();
+	    // Initialize change mode buttons after DOM loads
+	    setTimeout(updateChangeModeButtons, 200);
+	  });
+
+	  
     </script>
   </head>
-  <body style="background-color:#1d1f21">
+  <body>
   </br>
   <iframe width="0" height="0" src="https://www.youtube.com/embed/XYOnvRn7OaE?autoplay=1" frameborder="0" allowfullscreen></iframe>
-  <div id="container" style="margin:0% auto; width: 648px">
-	  <h3><span class="label label-info label-lg">Chess</span> <span id="online" class="label label-warning label-lg">0/2 connected</span> <span id="names" class="hidden label label-danger label-lg"></span> <span id="turn" style="float:right" class="hidden label label-info label-black">Black's turn!</span></h3>
-	   <div style="display: flex; gap: 10px;">
-		   <div style="flex: 1;">
-			   <div id="board" style="width: 100%"></div> <!-- 648px is ideal for native icon res of 80x80 px -->
-		   </div>
-		   <div style="width: 200px; background-color: #333; padding: 10px; border-radius: 5px; overflow-y: auto; max-height: 648px;">
-			   <h5 style="color: #FFF; text-align: center;">Moves (<span id="moveCounter">0</span>)</h5>
-			   <div id="moveHistory" style="color: #FFF; font-size: 12px; max-height: 600px; overflow-y: auto;"></div>
-		   </div>
-	   </div>
-	   </br>
-	   <button id="flipBoard" type="button" class="btn btn-success center-block btn-lg" onclick="board.flip(); highlight(lastMove)">Flip Board</button></br>
-	   <button id="restartBtn" type="button" class="btn btn-warning center-block btn-lg" onclick="restartGame()" style="display: none;">Restart Game</button></br>
-	   <button id="resetBtn" type="button" class="btn btn-danger center-block btn-lg" onclick="resetGame()" style="display: none;">Exit to Menu</button></br>
-	   <div id="restartRequest" class="alert alert-info hidden" style="margin-top: 10px; text-align: center;">
-		   <p id="restartMessage"></p>
-		   <button type="button" class="btn btn-success btn-sm" onclick="acceptRestart()">Accept</button>
-		   <button type="button" class="btn btn-danger btn-sm" onclick="rejectRestart()">Reject</button>
-	   </div>
-	   
-	   <!-- Selector de modo de juego -->
-	   <div id="modeSelector" class="wrapper text-center" style="margin-bottom: 10px;">
-		   <button id="singleplayerBtn" type="button" class="btn btn-info center-block btn-lg" onclick="startSinglePlayer()">Single Player (Local)</button>
-		   <button id="multiplayerBtn" type="button" class="btn btn-warning center-block btn-lg" onclick="startMultiplayer()">Multiplayer (Online)</button>
-	   </div>
-	   
-	   <div class='wrapper text-center'><div id="join" class="btn-group hidden"><button type="button" id="blackButton" class="btn btn-default center-block btn-lg" onclick="join('b')">Join Black</button>
-	   <button type="button" id="whiteButton" class="btn btn-default center-block btn-lg" onclick="join('w')">Join White</button></span></div></div>
-		 </br><input style="width: 150px; margin: 0px auto; display: none;" type="Username" class="form-control" id="username" placeholder="Username">
-		</br> 
+  
+
+
+  <!-- MAIN MENU MODAL - Appears on page load -->
+  <div id="mainMenuModal" class="modal-overlay active" style="z-index: 2000;">
+    <div class="modal-content" style="max-width: 600px;">
+      <h3 style="font-size: 28px; margin-bottom: 30px;">♟ Chess Game ♟</h3>
+      <p style="font-size: 16px; margin-bottom: 30px; color: var(--color-text);">Choose your game mode:</p>
+      
+      <div class="modal-buttons" style="flex-direction: column; gap: 15px; align-items: stretch;">
+        <button class="modal-btn modal-btn-primary" style="padding: 15px; font-size: 18px;" onclick="selectGameMode('singleplayer')">
+          <span style="display: block; font-size: 24px;">👤</span>
+          <strong>Single Player (Local)</strong>
+          <small style="display: block; font-size: 12px; margin-top: 5px;">Play against another player on the same device</small>
+        </button>
+        
+        <button class="modal-btn modal-btn-success" style="padding: 15px; font-size: 18px;" onclick="selectGameMode('multiplayer')">
+          <span style="display: block; font-size: 24px;">🌐</span>
+          <strong>Multiplayer (Online)</strong>
+          <small style="display: block; font-size: 12px; margin-top: 5px;">Play with someone else online</small>
+        </button>
+      </div>
+    </div>
   </div>
-  </body>
+
+  <!-- MULTIPLAYER SETUP MODAL - Appears when selecting multiplayer -->
+  <div id="multiplayerSetupModal" class="modal-overlay" style="z-index: 2000;">
+    <div class="modal-content" style="max-width: 600px;">
+      <h3>Multiplayer Game Setup</h3>
+
+      <div class="modal-input-group">
+        <label for="usernameInput">Enter your name:</label>
+        <input type="text" id="usernameInput" placeholder="Your name..." maxlength="20">
+      </div>
+
+      <div id="colorSelectionDiv" class="modal-input-group">
+        <label>Choose your color:</label>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
+          <div id="multiplayerWhiteBtn" onclick="selectMultiplayerColor('w')" style="cursor: pointer; padding: 20px; border: 2px solid var(--color-gold); border-radius: 8px; background-color: rgba(255, 215, 0, 0.2); transition: all 0.3s; text-align: center;" class="selected">
+            <div style="font-size: 48px; margin-bottom: 10px;">⚪</div>
+            <h4 style="color: var(--color-gold); margin: 10px 0;">White</h4>
+            <p style="font-size: 13px; color: var(--color-text); margin: 5px 0;">Play as White</p>
+          </div>
+
+          <div id="multiplayerBlackBtn" onclick="selectMultiplayerColor('b')" style="cursor: pointer; padding: 20px; border: 2px solid var(--color-border); border-radius: 8px; background-color: rgba(0,0,0,0.3); transition: all 0.3s; text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 10px;">⚫</div>
+            <h4 style="color: var(--color-info); margin: 10px 0;">Black</h4>
+            <p style="font-size: 13px; color: var(--color-text); margin: 5px 0;">Play as Black</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="gameLinkSection" style="margin: 20px 0; padding: 15px; background-color: rgba(0,0,0,0.2); border-radius: 5px; text-align: center;">
+        <p style="margin: 0 0 10px 0; font-size: 14px;">Your game link (share with other player):</p>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <input type="text" id="gameLink" readonly style="flex: 1; padding: 8px; background-color: rgba(0,0,0,0.3); border: 1px solid var(--color-border); border-radius: 4px; color: var(--color-text);">
+          <button class="modal-btn modal-btn-success" style="padding: 8px 12px;" onclick="copyGameLink()">
+            <span style="font-size: 16px;">📋</span> Copy
+          </button>
+        </div>
+      </div>
+
+      <div id="joiningRoomMessage" style="display: none; margin: 20px 0; padding: 15px; background-color: rgba(255, 215, 0, 0.1); border: 1px solid var(--color-gold); border-radius: 5px; text-align: center;">
+        <p style="margin: 0; font-size: 14px; color: var(--color-gold);">
+          <span style="font-size: 20px;">🎮</span><br>
+          You are joining an existing game!<br>
+          <small style="color: var(--color-text);">Choose your name and color to start playing</small>
+        </p>
+      </div>
+
+      <div class="modal-buttons">
+        <button id="startMultiplayerBtn" class="modal-btn modal-btn-success" onclick="startMultiplayerGame()">Start Game</button>
+        <button class="modal-btn modal-btn-secondary" onclick="backToMainMenu()">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SINGLE PLAYER NAMES MODAL - Appears when selecting single player -->
+  <div id="singleplayerNamesModal" class="modal-overlay" style="z-index: 2000;">
+    <div class="modal-content" style="max-width: 500px;">
+      <h3>Local Game Setup</h3>
+      <p style="margin-bottom: 20px;">Choose your opponent:</p>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0;">
+        <div class="opponent-option selected" onclick="selectOpponentType('human')" id="humanOption" style="cursor: pointer; padding: 20px; border: 2px solid var(--color-gold); border-radius: 8px; background-color: rgba(255, 215, 0, 0.1); transition: all 0.3s;">
+          <div style="font-size: 48px; margin-bottom: 10px;">👥</div>
+          <h4 style="color: var(--color-gold); margin: 10px 0;">Local 2 Players</h4>
+          <p style="font-size: 13px; color: var(--color-text); margin: 5px 0;">Play against another person</p>
+        </div>
+
+        <div class="opponent-option" onclick="selectOpponentType('ai')" id="aiOption" style="cursor: pointer; padding: 20px; border: 2px solid var(--color-border); border-radius: 8px; background-color: rgba(0,0,0,0.3); transition: all 0.3s;">
+          <div style="font-size: 48px; margin-bottom: 10px;">🤖</div>
+          <h4 style="color: var(--color-info); margin: 10px 0;">vs Computer</h4>
+          <p style="font-size: 13px; color: var(--color-text); margin: 5px 0;">Play against simple AI</p>
+        </div>
+      </div>
+
+      <div id="humanPlayerInputs" style="display: block;">
+        <div class="modal-input-group">
+          <label for="player1NameInput">Player 1 (White):</label>
+          <input type="text" id="player1NameInput" placeholder="Player 1 name..." maxlength="20" value="Player 1">
+        </div>
+
+        <div class="modal-input-group">
+          <label for="player2NameInput">Player 2 (Black):</label>
+          <input type="text" id="player2NameInput" placeholder="Player 2 name..." maxlength="20" value="Player 2">
+        </div>
+      </div>
+
+      <div id="aiPlayerInputs" style="display: none;">
+        <div class="modal-input-group">
+          <label for="playerNameInput">Your Name:</label>
+          <input type="text" id="playerNameInput" placeholder="Your name..." maxlength="20" value="Player">
+        </div>
+
+        <div class="modal-input-group">
+          <label>Play as:</label>
+          <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
+            <button id="playAsWhite" class="modal-btn modal-btn-primary" style="flex: 1;" onclick="selectPlayerColor('w')">⚪ White</button>
+            <button id="playAsBlack" class="modal-btn modal-btn-secondary" style="flex: 1;" onclick="selectPlayerColor('b')">⚫ Black</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-buttons" style="margin-top: 20px;">
+        <button class="modal-btn modal-btn-success" onclick="confirmPlayerNames()">Start Game</button>
+        <button class="modal-btn modal-btn-secondary" onclick="backToMainMenu()">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .opponent-option:hover {
+      border-color: var(--color-gold) !important;
+      background-color: rgba(255, 215, 0, 0.15) !important;
+      transform: scale(1.02);
+    }
+
+    .opponent-option.selected {
+      border-color: var(--color-gold) !important;
+      background-color: rgba(255, 215, 0, 0.2) !important;
+    }
+  </style>
+
+  <!-- MAIN GAME CONTAINER - Hidden until game mode is selected -->
+  <div id="gameContainer" class="container-chess" style="max-width: 900px; margin: 0 auto; display: none;">
+	  <!-- Header con información del juego -->
+	  <div class="panel-header" style="margin-bottom: 15px;">
+		  <div class="row">
+			  <div class="col-sm-12 text-right">
+				  <button id="themeToggleBtn" type="button" class="btn btn-sm" style="background-color: var(--color-gold); color: var(--color-text); border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;" onclick="toggleTheme()">☀️ Light Mode</button>
+				  <span id="turn" class="hidden label label-info" style="padding: 8px 12px; font-size: 13px; margin-left: 10px;">Black's turn!</span>
+			  </div>
+		  </div>
+		  <div id="names" class="hidden text-center" style="margin-top: 10px; color: var(--color-gold); font-weight: bold;"></div>
+	  </div>
+
+	  <!-- Tablero y panel de movimientos -->
+	  <div class="row" style="margin-bottom: 15px;">
+		  <div class="col-sm-8">
+			  <!-- Black player name (top, left side) -->
+			  <div style="margin-left: 0; margin-bottom: 8px; padding-left: 5px;">
+				  <span style="font-size: 14px; font-weight: bold; color: var(--color-gold);" id="blackPlayerName">Player 2</span>
+				  <span id="blackXP" style="font-size:12px; color: var(--color-text); margin-left:8px;">XP: 0</span>
+				  <button id="activateChangeModeBlack" class="change-btn-square" title="Activar cambio de pieza (Negras)" onclick="activateChangeModeForColor('b')">♻️</button>
+				  <button id="activateSkill2Black" class="skill2-btn-square" title="Activar habilidad nivel 2 (Negras)" onclick="activateSkill2ForColor('b')" style="display:none;">⚡</button>
+				  <span style="float:right; font-size:14px; color:var(--color-warning); font-weight:bold; margin-right:10px;" id="blackTimer">5.0</span>
+			  </div>
+			  
+			  <!-- Board container -->
+			  <div style="position: relative; display: inline-block; width: 100%; border: 2px solid var(--color-border); border-radius: 4px;">
+				  <div id="board" style="width: 100%;"></div>
+			  </div>
+			  
+			  <!-- White player name (bottom, left side) -->
+			  <div style="margin-left: 0; margin-top: 8px; padding-left: 5px;">
+				  <span style="font-size: 14px; font-weight: bold; color: var(--color-gold);" id="whitePlayerName">Player 1</span>
+				  <span id="whiteXP" style="font-size:12px; color: var(--color-text); margin-left:8px;">XP: 0</span>
+				  <button id="activateChangeModeWhite" class="change-btn-square" title="Activar cambio de pieza (Blancas)" onclick="activateChangeModeForColor('w')">♻️</button>
+				  <button id="activateSkill2White" class="skill2-btn-square" title="Activar habilidad nivel 2 (Blancas)" onclick="activateSkill2ForColor('w')" style="display:none;">⚡</button>
+				  <span style="float:right; font-size:14px; color:var(--color-warning); font-weight:bold; margin-right:10px;" id="whiteTimer">5.0</span>
+			  </div>
+			  
+			  <!-- Change Mode Active Indicator -->
+			  <div style="margin-top: 12px; text-align: left; padding-left: 5px;">
+				  <button id="activateChangeMode" type="button" class="btn btn-sm" style="background-color: #666; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; display: none;" onclick="activateChangeMode()">
+					  🔄 Activate Change Mode
+				  </button>
+				  <span id="changeModeStatus" style="font-size: 12px; color: #999; margin-left: 10px; display: none;">Click a piece to change...</span>
+			  </div>
+		  </div>
+		  <div class="col-sm-4">
+			  <div class="panel-dark">
+				  <div class="panel-header" style="margin-bottom: 10px; margin-left: -15px; margin-right: -15px; margin-top: -15px;">
+					  <h5>🎯 Objectives</h5>
+				  </div>
+				  <div style="font-size: 12px;">
+					  <!-- White Objectives -->
+					  <div style="margin-bottom: 12px; padding: 8px; background-color: #f5f5f5; border-radius: 4px; color: #333;">
+						  <div style="font-weight: bold; margin-bottom: 8px;">⚪ White</div>
+						  <div id="whiteMissionPawnCenter" style="padding: 4px 0; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+							  <span><span style="font-size: 14px; margin-right: 6px;">☐</span> Pawn Center</span>
+							  <span id="whitePawnStatus" style="font-size: 16px;">⭕</span>
+						  </div>
+						  <div id="whiteMissionKnightCenter" style="padding: 4px 0; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+							  <span><span style="font-size: 14px; margin-right: 6px;">☐</span> Knight Center</span>
+							  <span id="whiteKnightStatus" style="font-size: 16px;">⭕</span>
+						  </div>
+						  <div id="whiteMissionCastling" style="padding: 4px 0; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+							  <span><span style="font-size: 14px; margin-right: 6px;">☐</span> Castling</span>
+							  <span id="whiteCastlingStatus" style="font-size: 16px;">⭕</span>
+						  </div>
+						  <div id="whiteCaptured" style="padding: 4px 0; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+							  <span><span style="font-size: 14px; margin-right: 6px;">♟️</span> Piezas capturadas</span>
+							  <span id="whiteCapturedCount" style="font-size: 16px;">0</span>
+						  </div>
+					  </div>
+					  
+					  <!-- Black Objectives -->
+					  <div style="margin-bottom: 12px; padding: 8px; background-color: #333; border-radius: 4px; color: #ccc;">
+						  <div style="font-weight: bold; margin-bottom: 8px;">⚫ Black</div>
+						  <div id="blackMissionPawnCenter" style="padding: 4px 0; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+							  <span><span style="font-size: 14px; margin-right: 6px;">☐</span> Pawn Center</span>
+							  <span id="blackPawnStatus" style="font-size: 16px;">⭕</span>
+						  </div>
+						  <div id="blackMissionKnightCenter" style="padding: 4px 0; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+							  <span><span style="font-size: 14px; margin-right: 6px;">☐</span> Knight Center</span>
+							  <span id="blackKnightStatus" style="font-size: 16px;">⭕</span>
+						  </div>
+						  <div id="blackMissionCastling" style="padding: 4px 0; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+							  <span><span style="font-size: 14px; margin-right: 6px;">☐</span> Castling</span>
+							  <span id="blackCastlingStatus" style="font-size: 16px;">⭕</span>
+						  </div>
+						  <div id="blackCaptured" style="padding: 4px 0; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+							  <span><span style="font-size: 14px; margin-right: 6px;">♟️</span> Piezas capturadas</span>
+							  <span id="blackCapturedCount" style="font-size: 16px;">0</span>
+						  </div>
+					  </div>
+				  </div>
+				  <div class="panel-header" style="margin-bottom: 10px; margin-left: -15px; margin-right: -15px; margin-top: -15px;">
+					  <h5>Move History</h5>
+				  </div>
+				  <div style="text-align: center; font-weight: bold; margin-bottom: 10px; color: var(--color-gold);">
+					  Total Moves: <span id="moveCounter">0</span>
+				  </div>
+				  <div id="moveHistory" style="font-size: 12px; max-height: 400px; overflow-y: auto;"></div>
+			  </div>
+		  </div>
+	  </div>
+
+	  <!-- Botones de control del juego -->
+	 	 	 	  <div style="margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+		  <button id="flipBoard" type="button" class="btn btn-primary btn-sm" style="flex: 1; min-width: 120px;" onclick="flipBoardAndNames()">
+			  <span class="glyphicon glyphicon-refresh"></span> Flip Board
+		  </button>
+		  <button id="undoBtn" type="button" class="btn btn-info btn-sm" style="flex: 1; min-width: 120px; display: none;" onclick="undoMove()" id="undoButtonGroup">
+			  <span class="glyphicon glyphicon-arrow-left"></span> Undo Move
+		  </button>
+		  <button id="restartBtn" type="button" class="btn btn-warning btn-sm" style="flex: 1; min-width: 120px; display: none;" onclick="restartGame()" id="restartButtonGroup">
+			  <span class="glyphicon glyphicon-repeat"></span> Restart
+		  </button>
+		  <button id="resetBtn" type="button" class="btn btn-danger btn-sm" style="flex: 1; min-width: 120px; display: none;" onclick="resetGame()" id="exitButtonGroup">
+			  <span class="glyphicon glyphicon-remove"></span> Exit
+		  </button>
+		  <button id="surrenderBtn" type="button" class="btn btn-danger btn-sm" style="flex: 1; min-width: 120px; display: none;" onclick="requestSurrender()">
+			  <span class="glyphicon glyphicon-flag"></span> Surrender
+		  </button>
+	  </div>
+
+	  <!-- Solicitud de rendición en multiplayer -->
+	  <div id="surrenderRequest" class="alert alert-warning hidden" style="margin-bottom: 15px; padding: 15px; border-radius: 5px;">
+		  <h5 style="margin-top: 0; color: var(--color-gold);">Surrender Request</h5>
+		  <p id="surrenderMessage" style="margin: 10px 0;"></p>
+		  <div class="btn-group btn-group-justified" role="group">
+			  <div class="btn-group" role="group">
+				  <button type="button" class="btn btn-success btn-sm" onclick="acceptSurrender()">
+					  <span class="glyphicon glyphicon-ok"></span> Accept (End Game)
+				  </button>
+			  </div>
+			  <div class="btn-group" role="group">
+				  <button type="button" class="btn btn-danger btn-sm" onclick="rejectSurrender()">
+					  <span class="glyphicon glyphicon-remove"></span> Reject (Continue)
+				  </button>
+			  </div>
+		  </div>
+	  </div>
+
+	  <!-- Solicitud de reinicio en multiplayer -->
+	  <div id="restartRequest" class="alert alert-info hidden" style="margin-bottom: 15px; padding: 15px; border-radius: 5px;">
+		  <h5 style="margin-top: 0; color: var(--color-gold);">Restart Request</h5>
+		  <p id="restartMessage" style="margin: 10px 0;"></p>
+		  <div class="btn-group btn-group-justified" role="group">
+			  <div class="btn-group" role="group">
+				  <button type="button" class="btn btn-success btn-sm" onclick="acceptRestart()">
+					  <span class="glyphicon glyphicon-ok"></span> Accept
+				  </button>
+			  </div>
+			  <div class="btn-group" role="group">
+				  <button type="button" class="btn btn-danger btn-sm" onclick="rejectRestart()">
+					  <span class="glyphicon glyphicon-remove"></span> Reject
+				  </button>
+			  </div>
+		  </div>
+	  </div>
+
+	  <!-- Selector de modo de juego -->
+	  <div id="modeSelector" class="panel-dark" style="margin-bottom: 15px; text-align: center;">
+		  <div class="panel-header" style="margin: -15px -15px 15px -15px;">
+			  <h5>Game Mode</h5>
+		  </div>
+		  <div class="btn-group btn-group-justified" role="group">
+			  <div class="btn-group" role="group">
+				  <button id="singleplayerBtn" type="button" class="btn btn-info btn-sm" onclick="startSinglePlayer()">
+					  <span class="glyphicon glyphicon-user"></span> Single Player
+				  </button>
+			  </div>
+			  <div class="btn-group" role="group">
+				  <button id="multiplayerBtn" type="button" class="btn btn-primary btn-sm" onclick="startMultiplayer()">
+					  <span class="glyphicon glyphicon-globe"></span> Multiplayer
+				  </button>
+			  </div>
+		  </div>
+	  </div>
+
+	  <!-- Selección de color en multiplayer -->
+	  <div id="join" class="panel-dark hidden" style="margin-bottom: 15px; text-align: center;">
+		  <div class="panel-header" style="margin: -15px -15px 15px -15px;">
+			  <h5>Select Your Color</h5>
+		  </div>
+		  <div class="btn-group btn-group-justified" role="group">
+			  <div class="btn-group" role="group">
+				  <button type="button" id="blackButton" class="btn btn-dark btn-lg" onclick="join('b')">
+					  <span style="font-weight: bold; font-size: 18px;">⚫ Black</span>
+				  </button>
+			  </div>
+			  <div class="btn-group" role="group">
+				  <button type="button" id="whiteButton" class="btn btn-white btn-lg" onclick="join('w')">
+					  <span style="font-weight: bold; font-size: 18px;">⚪ White</span>
+				  </button>
+			  </div>
+		  </div>
+	  </div>
+
+	  <!-- Entrada de nombre de usuario -->
+	  <div class="form-group hidden" id="usernameGroup" style="margin-bottom: 15px;">
+		  <label for="username" style="color: var(--color-gold); font-weight: bold;">Enter Your Name:</label>
+		  <input type="text" class="form-control" id="username" placeholder="Type your username...">
+	  </div>
+  </div>
+  <!-- End of gameContainer -->
+
+  <!-- Waiting for Opponent Overlay -->
+  <div id="waitingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); z-index: 3000; justify-content: center; align-items: center;">
+    <div style="text-align: center; color: var(--color-text);">
+      <div style="font-size: 72px; margin-bottom: 20px;">⏳</div>
+      <h2 style="font-size: 32px; margin-bottom: 15px; color: var(--color-gold);">Waiting for Opponent...</h2>
+      <p style="font-size: 18px; margin-bottom: 25px;">Share the game link with your friend to start playing</p>
+      <div style="display: inline-block; padding: 15px 30px; background-color: rgba(255,215,0,0.1); border: 2px solid var(--color-gold); border-radius: 8px;">
+        <p style="margin: 0 0 10px 0; font-size: 14px; color: var(--color-text);">Game Link:</p>
+        <input type="text" id="waitingGameLink" readonly style="width: 400px; padding: 10px; background-color: rgba(0,0,0,0.5); border: 1px solid var(--color-border); border-radius: 4px; color: var(--color-text); text-align: center; font-size: 14px;">
+        <br>
+        <button class="modal-btn modal-btn-success" style="margin-top: 15px; padding: 10px 20px;" onclick="copyWaitingLink()">
+          📋 Copy Link
+        </button>
+      </div>
+      <div style="margin-top: 30px;">
+        <div class="spinner" style="border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--color-gold); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+
+  <!-- Modal: Confirmación para cambiar pieza -->
+  <div id="changeConfirmModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3>¡Ya has completado todas las condiciones!</h3>
+      <p>¿Quieres cambiar una pieza por otra?</p>
+      <div class="modal-buttons">
+        <button class="modal-btn modal-btn-success" onclick="showChangeDialog()">Sí, cambiar</button>
+        <button class="modal-btn modal-btn-secondary" onclick="closeChangeConfirmModal()">No, seguir jugando</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Seleccionar pieza y casilla para cambiar -->
+  <div id="changeDialog" class="modal-overlay">
+    <div class="modal-content">
+      <h3>Cambiar una pieza</h3>
+      
+      <div class="modal-input-group">
+        <label for="changeSquareInput">Casilla de la pieza (ej: e2, d4):</label>
+        <input type="text" id="changeSquareInput" placeholder="a1" maxlength="2">
+      </div>
+
+      <div class="modal-input-group">
+        <label>Selecciona la nueva pieza:</label>
+        <div class="modal-pieces-grid">
+          <button class="piece-btn" onclick="selectPiece('q')">♕ Reina</button>
+          <button class="piece-btn" onclick="selectPiece('r')">♖ Torre</button>
+          <button class="piece-btn" onclick="selectPiece('b')">♗ Alfil</button>
+          <button class="piece-btn" onclick="selectPiece('n')">♘ Caballo</button>
+          <button class="piece-btn" onclick="selectPiece('p')">♙ Peón</button>
+        </div>
+      </div>
+
+      <div class="modal-buttons">
+        <button class="modal-btn modal-btn-success" onclick="confirmChange()">Confirmar cambio</button>
+        <button class="modal-btn modal-btn-secondary" onclick="closeChangeDialog()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Notificación de condiciones completadas -->
+  <div id="completionModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 id="completionTitle">¡Felicidades!</h3>
+      <p id="completionMessage">Has completado todas las condiciones especiales.</p>
+      <div class="modal-buttons">
+        <button class="modal-btn modal-btn-primary" onclick="closeCompletionModal()">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Resultado del cambio de pieza -->
+  <div id="changeResultModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 id="resultTitle">Cambio realizado</h3>
+      <p id="resultMessage">La pieza ha sido cambiada exitosamente.</p>
+      <div class="modal-buttons">
+        <button class="modal-btn modal-btn-primary" onclick="closeChangeResultModal()">Aceptar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Game Over (Checkmate/Stalemate) -->
+  <div id="gameOverModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 id="gameOverTitle">♔ Game Over ♔</h3>
+      <p id="gameOverMessage">The game has ended.</p>
+      <div class="modal-buttons">
+        <button class="modal-btn modal-btn-primary" onclick="closeGameOverModal(); restartGame()">Play Again</button>
+        <button class="modal-btn modal-btn-secondary" onclick="closeGameOverModal(); resetGame()">Main Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Surrender -->
+  <div id="surrenderModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 style="font-size: 24px; color: var(--color-gold); margin-bottom: 15px;">🏳️ Game Ended by Surrender 🏳️</h3>
+      <p id="surrenderModalMessage" style="font-size: 16px; margin: 15px 0;">A player has surrendered.</p>
+      <div class="modal-buttons">
+        <button class="modal-btn modal-btn-primary" onclick="closeSurrenderModal(); restartGame()">Play Again</button>
+        <button class="modal-btn modal-btn-secondary" onclick="closeSurrenderModal(); resetGame()">Main Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Roulette for Piece Change -->
+  <div id="rouletteModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 id="rouletteTitle">🎡 Spinning Roulette...</h3>
+      <div style="font-size: 48px; text-align: center; margin: 30px 0; animation: spin 2s linear infinite;">
+        🎲
+      </div>
+      <p id="rouletteResult" style="text-align: center; font-size: 18px; font-weight: bold; color: var(--color-gold);">Waiting...</p>
+      <p style="text-align: center; font-size: 14px; color: #999;">The roulette will select a piece for you!</p>
+    </div>
+  </div>
+
+  <!-- Modal: Skill 2 Selection (50 XP) -->
+  <div id="skill2SelectionModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 600px;">
+      <h3 style="color: var(--color-gold); font-size: 24px;">🌟 Level 2 Skill Unlocked! 🌟</h3>
+      <p id="skill2PlayerName" style="margin-bottom: 20px; font-size: 16px;">You've reached 50 XP! Choose your Level 2 skill:</p>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0;">
+        <div class="skill2-option" onclick="selectSkill2('freeze')" style="cursor: pointer; padding: 20px; border: 2px solid var(--color-border); border-radius: 8px; background-color: rgba(0,0,0,0.3); transition: all 0.3s;">
+          <div style="font-size: 48px; margin-bottom: 10px;">⏸️</div>
+          <h4 style="color: var(--color-info); margin: 10px 0;">Congelar Tiempo</h4>
+          <p style="font-size: 13px; color: var(--color-text); margin: 5px 0;">Congela tu propio reloj durante un turno completo. ¡Tiempo ilimitado para pensar!</p>
+        </div>
+
+        <div class="skill2-option" onclick="selectSkill2('upgrade')" style="cursor: pointer; padding: 20px; border: 2px solid var(--color-border); border-radius: 8px; background-color: rgba(0,0,0,0.3); transition: all 0.3s;">
+          <div style="font-size: 48px; margin-bottom: 10px;">⬆️</div>
+          <h4 style="color: var(--color-success); margin: 10px 0;">Mejorar Cambio</h4>
+          <p style="font-size: 13px; color: var(--color-text); margin: 5px 0;">Desbloquea el cambio de pieza de nuevo. Ahora incluye Alfil y Torre en la ruleta.</p>
+        </div>
+      </div>
+
+      <p style="font-size: 12px; color: #999; margin-top: 15px;">⚠️ Esta elección es permanente y solo puedes usar el poder una vez.</p>
+    </div>
+  </div>
+
+  <style>
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .skill2-option:hover {
+      border-color: var(--color-gold) !important;
+      background-color: rgba(255, 215, 0, 0.1) !important;
+      transform: scale(1.05);
+    }
+  </style>
+
+		<style>
+			.change-btn-square {
+				width: 32px;
+				height: 32px;
+				border-radius: 6px;
+				border: 2px solid var(--color-gold);
+				background: var(--color-dark);
+				color: var(--color-gold);
+				font-size: 20px;
+				font-weight: bold;
+				margin-left: 8px;
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				cursor: pointer;
+				transition: background 0.2s;
+			}
+			.change-btn-square:active, .change-btn-square:focus {
+				background: var(--color-gold);
+				color: var(--color-dark);
+			}
+			.change-btn-square[disabled] {
+				opacity: 0.5;
+				pointer-events: none;
+			}
+
+			.skill2-btn-square {
+				width: 32px;
+				height: 32px;
+				border-radius: 6px;
+				border: 2px solid var(--color-info);
+				background: var(--color-dark);
+				color: var(--color-info);
+				font-size: 20px;
+				font-weight: bold;
+				margin-left: 8px;
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				cursor: pointer;
+				transition: background 0.2s;
+			}
+			.skill2-btn-square:hover {
+				background: var(--color-info);
+				color: var(--color-dark);
+			}
+			.skill2-btn-square[disabled] {
+				opacity: 0.5;
+				pointer-events: none;
+			}
+		</style>
+		<script>
+			// Atajo de teclado Q para activar el cambio de pieza en el turno correcto
+			document.addEventListener('keydown', function(e) {
+				if (e.key === 'q' || e.key === 'Q') {
+					if (game && !changeMode) {
+						if (game.turn() === 'w') {
+							document.getElementById('activateChangeModeWhite').click();
+						} else if (game.turn() === 'b') {
+							document.getElementById('activateChangeModeBlack').click();
+						}
+					}
+				}
+				// Keyboard shortcut E to activate skill2
+				if (e.key === 'e' || e.key === 'E') {
+					if (game) {
+						if (game.turn() === 'w') {
+							activateSkill2ForColor('w');
+						} else if (game.turn() === 'b') {
+							activateSkill2ForColor('b');
+						}
+					}
+				}
+			});
+
+			// Function to activate skill2 for a specific color
+			function activateSkill2ForColor(color) {
+				if(color === 'w') {
+					if(!whiteSkill2Choice || whiteSkill2Used) return;
+
+					if(whiteSkill2Choice === 'freeze') {
+						activateTimeFreeze('w');
+						document.getElementById('activateSkill2White').style.display = 'none';
+					} else if(whiteSkill2Choice === 'upgrade') {
+						// Upgraded change mode - activate change mode
+						activateChangeModeForColor('w');
+						// Mark as used after the change is completed
+						// This will be handled in applyPieceChange
+					}
+				} else if(color === 'b') {
+					if(!blackSkill2Choice || blackSkill2Used) return;
+
+					if(blackSkill2Choice === 'freeze') {
+						activateTimeFreeze('b');
+						document.getElementById('activateSkill2Black').style.display = 'none';
+					} else if(blackSkill2Choice === 'upgrade') {
+						// Upgraded change mode - activate change mode
+						activateChangeModeForColor('b');
+						// Mark as used after the change is completed
+						// This will be handled in applyPieceChange
+					}
+				}
+			}
+
+			// Update skill2 button visibility
+			function updateSkill2Buttons() {
+				var whiteBtn = document.getElementById('activateSkill2White');
+				var blackBtn = document.getElementById('activateSkill2Black');
+
+				if(!whiteBtn || !blackBtn) return;
+
+				// In multiplayer, only show buttons for current player's color
+				if(gameMode === 'multiplayer' && side) {
+					if(side === 'w') {
+						// Show only white's button
+						if(whiteSkill2Choice && !whiteSkill2Used) {
+							whiteBtn.style.display = 'inline-flex';
+							if(whiteSkill2Choice === 'freeze') {
+								whiteBtn.textContent = '⏸️';
+								whiteBtn.title = 'Congelar tu propio tiempo por un turno';
+							} else {
+								whiteBtn.textContent = '⬆️';
+								whiteBtn.title = 'Cambio de pieza mejorado';
+							}
+						} else {
+							whiteBtn.style.display = 'none';
+						}
+						blackBtn.style.display = 'none'; // Hide opponent's button
+					} else if(side === 'b') {
+						// Show only black's button
+						if(blackSkill2Choice && !blackSkill2Used) {
+							blackBtn.style.display = 'inline-flex';
+							if(blackSkill2Choice === 'freeze') {
+								blackBtn.textContent = '⏸️';
+								blackBtn.title = 'Congelar tu propio tiempo por un turno';
+							} else {
+								blackBtn.textContent = '⬆️';
+								blackBtn.title = 'Cambio de pieza mejorado';
+							}
+						} else {
+							blackBtn.style.display = 'none';
+						}
+						whiteBtn.style.display = 'none'; // Hide opponent's button
+					}
+				} else {
+					// Single player or AI mode - show both
+					if(whiteSkill2Choice && !whiteSkill2Used) {
+						whiteBtn.style.display = 'inline-flex';
+						if(whiteSkill2Choice === 'freeze') {
+							whiteBtn.textContent = '⏸️';
+							whiteBtn.title = 'Congelar tu propio tiempo por un turno';
+						} else {
+							whiteBtn.textContent = '⬆️';
+							whiteBtn.title = 'Cambio de pieza mejorado';
+						}
+					} else {
+						whiteBtn.style.display = 'none';
+					}
+
+					if(blackSkill2Choice && !blackSkill2Used) {
+						blackBtn.style.display = 'inline-flex';
+						if(blackSkill2Choice === 'freeze') {
+							blackBtn.textContent = '⏸️';
+							blackBtn.title = 'Congelar tu propio tiempo por un turno';
+						} else {
+							blackBtn.textContent = '⬆️';
+							blackBtn.title = 'Cambio de pieza mejorado';
+						}
+					} else {
+						blackBtn.style.display = 'none';
+					}
+				}
+			}
+
+			// Swap skill buttons for black player in multiplayer
+			function swapSkillButtons() {
+				var whiteChangeBtn = document.getElementById('activateChangeModeWhite');
+				var blackChangeBtn = document.getElementById('activateChangeModeBlack');
+				var whiteSkill2Btn = document.getElementById('activateSkill2White');
+				var blackSkill2Btn = document.getElementById('activateSkill2Black');
+				var whiteXP = document.getElementById('whiteXP');
+				var blackXP = document.getElementById('blackXP');
+
+				if(!whiteChangeBtn || !blackChangeBtn) return;
+
+				// Get parent containers
+				var whiteContainer = whiteChangeBtn.parentElement;
+				var blackContainer = blackChangeBtn.parentElement;
+
+				// Swap change mode buttons
+				var whiteChangeBtnClone = whiteChangeBtn.cloneNode(true);
+				var blackChangeBtnClone = blackChangeBtn.cloneNode(true);
+
+				// Swap skill2 buttons
+				var whiteSkill2BtnClone = whiteSkill2Btn.cloneNode(true);
+				var blackSkill2BtnClone = blackSkill2Btn.cloneNode(true);
+
+				// Swap XP displays
+				var whiteXPClone = whiteXP.cloneNode(true);
+				var blackXPClone = blackXP.cloneNode(true);
+
+				// Replace buttons in DOM
+				whiteChangeBtn.replaceWith(blackChangeBtnClone);
+				blackChangeBtn.replaceWith(whiteChangeBtnClone);
+				whiteSkill2Btn.replaceWith(blackSkill2BtnClone);
+				blackSkill2Btn.replaceWith(whiteSkill2BtnClone);
+				whiteXP.replaceWith(blackXPClone);
+				blackXP.replaceWith(whiteXPClone);
+
+				// Update IDs after swap
+				whiteChangeBtnClone.id = 'activateChangeModeWhite';
+				blackChangeBtnClone.id = 'activateChangeModeBlack';
+				whiteSkill2BtnClone.id = 'activateSkill2White';
+				blackSkill2BtnClone.id = 'activateSkill2Black';
+				whiteXPClone.id = 'whiteXP';
+				blackXPClone.id = 'blackXP';
+			}
+		</script>
+		<script>
+			function activateChangeModeForColor(color) {
+				// Solo permitir si cumple condiciones
+				if (color === 'w') {
+					if ((typeof whiteXP === 'undefined' ? 0 : whiteXP) < 21 || whiteHasUsedChange) return;
+				} else if (color === 'b') {
+					if ((typeof blackXP === 'undefined' ? 0 : blackXP) < 21 || blackHasUsedChange) return;
+				}
+				changeMode = true;
+				changeColorPending = color;
+				updateChangeModeButtons();
+			}
+
+			// Modificar selectPieceForChange para aceptar color
+			function selectPieceForChange(square) {
+				if(!changeMode) return;
+				var piece = game.get(square);
+				if(!piece) {
+					console.log('No piece on square: ' + square);
+					return;
+				}
+				// Solo permitir seleccionar pieza del color que tiene el turno de cambio
+				if(piece.color !== changeColorPending) {
+					console.log('Wrong piece color. Selected: ' + piece.color + ', Expected: ' + changeColorPending);
+					return;
+				}
+				// No permitir cambiar el rey
+				if(piece.type === 'k') {
+					console.log('Attempted to change king on ' + square + ' - not allowed');
+					showToast('El rey no puede ser cambiado.');
+					return;
+				}
+				console.log('Selected piece for change: ' + square + ' (' + piece.type + ')');
+				selectedSquareForChange = square;
+				showRoulette(piece.color);
+			}
+		</script>
+		<script>
+			// 2. Lógica JS para temporizadores
+var whiteTime = 300;
+var blackTime = 300;
+var timerInterval = null;
+
+function formatTime(seconds) {
+    var m = Math.floor(seconds / 60);
+    var s = Math.floor(seconds % 60);
+    return m.toString().padStart(2, '0') + ':' + s.toString().padStart(2, '0');
+}
+
+function updateTimersDisplay() {
+    document.getElementById('whiteTimer').textContent = formatTime(whiteTime);
+    document.getElementById('blackTimer').textContent = formatTime(blackTime);
+}
+
+function startPlayerTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(function() {
+        // Don't decrease time if it's frozen
+        if(isTimeFrozen()) {
+            return; // Skip timer decrease this second
+        }
+
+        if (game.turn() === 'w') {
+            whiteTime--;
+            if (whiteTime <= 0) {
+                whiteTime = 0;
+                updateTimersDisplay();
+                clearInterval(timerInterval);
+                endGameByTimeout('w');
+                return;
+            }
+        } else {
+            blackTime--;
+            if (blackTime <= 0) {
+                blackTime = 0;
+                updateTimersDisplay();
+                clearInterval(timerInterval);
+                endGameByTimeout('b');
+                return;
+            }
+        }
+        updateTimersDisplay();
+    }, 1000);
+}
+
+function stopPlayerTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+}
+
+function resetTimers() {
+    whiteTime = 300;
+    blackTime = 300;
+    updateTimersDisplay();
+}
+
+function endGameByTimeout(color) {
+    var loser = color === 'w' ? 'White' : 'Black';
+    var winner = color === 'w' ? 'Black' : 'White';
+    gameEnded = true;
+    showToast('¡Tiempo agotado! ' + loser + ' pierde por tiempo.', 5000);
+    setTimeout(function() {
+        showCheckmateModal(winner, loser);
+    }, 1000);
+}
+
+// Llama a startPlayerTimer() cada vez que cambie el turno
+// y a resetTimers() al iniciar/reiniciar partida
+		</script>
+	</body>
 </html>
