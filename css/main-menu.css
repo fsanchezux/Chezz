@@ -281,7 +281,7 @@
   transition: all 0.3s ease;
   text-transform: uppercase;
   letter-spacing: 2px;
-  align-self: flex-start;
+  align-self: flex-end;
 }
 
 .play-button:hover {
