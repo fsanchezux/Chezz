@@ -155,3 +155,18 @@ function copyRoomLink() {
     showToast('Failed to copy room link');
   });
 }
+
+// Show/hide main menu screen
+function showMainMenu() {
+  var mainMenuScreen = document.getElementById('mainMenuScreen');
+  if(mainMenuScreen) {
+    mainMenuScreen.style.display = 'flex';
+  }
+}
+
+function hideMainMenu() {
+  var mainMenuScreen = document.getElementById('mainMenuScreen');
+  if(mainMenuScreen) {
+    mainMenuScreen.style.display = 'none';
+  }
+}

@@ -47,7 +47,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(to top, #d2fe0b 0%, rgba(210, 254, 11, 0) 100%);
+  background: linear-gradient(1deg,rgba(210, 254, 11, 1) 0%, rgba(225, 236, 50, 0.33) 55%, rgba(237, 221, 83, 0) 100%);
   pointer-events: none;
   z-index: 1;
 }
@@ -91,7 +91,7 @@
   font-family: 'CHESSVETICA', sans-serif;
   font-size: 400px;
   line-height: 1;
-  color: #2a2a2a;
+  color: #d2fe0b;
   position: absolute;
   user-select: none;
   clip-path: inset(100% 0 0 0);

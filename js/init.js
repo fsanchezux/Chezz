@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Wait 3 seconds for the fill animation to complete (2.5s animation + 0.5s buffer)
   setTimeout(function() {
     hideLoadingScreen();
-    showModal('mainMenuModal');
+    showMainMenu();
   }, 3000);
 
   console.log('Chess Application initialized successfully');

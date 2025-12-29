@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/loading.css">
   <link rel="stylesheet" href="css/modals.css">
+  <link rel="stylesheet" href="css/main-menu.css">
   <link rel="stylesheet" href="css/custom-chess.css">
 
   <!-- ============ JAVASCRIPT LIBRARIES ============ -->
@@ -47,40 +48,93 @@
   <div id="loadingScreen">
     <div class="loading-content">
       <div class="chess-piece-container">
-        <div class="chess-piece-outline">e</div>
-        <div class="chess-piece-dark">e</div>
+        <div class="chess-piece-outline">K</div>
+        <div class="chess-piece-dark">K</div>
       </div>
     </div>
-    <div class="loading-text">Loading...</div>
+    
   </div>
 
-  <!-- ============ MAIN MENU MODAL ============ -->
-  <div id="mainMenuModal" class="modal-overlay">
-    <div class="modal-content">
-      <div class="modal-header">
-        <div class="modal-title">♟️ Chess Game</div>
-        <div class="modal-subtitle">Choose your game mode</div>
+  <!-- ============ MAIN MENU SCREEN ============ -->
+  <div id="mainMenuScreen" class="main-menu-container" style="display: none;">
+    <!-- Left Sidebar -->
+    <div class="sidebar">
+      <!-- Logo -->
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">K</div>
+        <div class="sidebar-logo-text">CHESSOL</div>
+        <div class="sidebar-version">● Version: <span>0.005</span></div>
       </div>
 
-      <div class="modal-body">
-        <div class="modal-options">
-          <div class="modal-option" onclick="selectGameMode('singleplayer')">
-            <div class="modal-option-icon">👥</div>
-            <div class="modal-option-title">Single Player</div>
-            <div class="modal-option-desc">Play locally or vs AI</div>
-          </div>
+      <!-- Menu Items -->
+      <div class="sidebar-menu">
+        <div class="menu-item active">VS AI</div>
+        <div class="menu-item disabled">Ranked</div>
+        <div class="menu-item disabled">Training</div>
+      </div>
 
-          <div class="modal-option" onclick="selectGameMode('multiplayer')">
-            <div class="modal-option-icon">🌐</div>
-            <div class="modal-option-title">Multiplayer</div>
-            <div class="modal-option-desc">Play online</div>
+      <!-- Bottom Menu -->
+      <div class="sidebar-bottom">
+        <div class="bottom-menu-item">
+          <span class="bottom-menu-icon">❓</span>
+          <span>About us</span>
+        </div>
+        <div class="bottom-menu-item" onclick="toggleTheme()">
+          <span class="bottom-menu-icon">☀️</span>
+          <span>Light mode</span>
+        </div>
+        <div class="bottom-menu-item">
+          <span class="bottom-menu-icon">⚙️</span>
+          <span>Settings</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Top Bar -->
+      <div class="top-bar">
+        <div class="user-info">
+          <div class="settings-icon">⚙</div>
+        </div>
+        <div class="user-badge">
+          <div class="user-badge-icon">♟</div>
+          <div class="user-badge-info">
+            <div class="user-badge-title">CALLALTA</div>
+            <div class="user-badge-name">ELO 500</div>
+            <div class="user-badge-elo">W 60 L 5 D 20</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Grid -->
+      <div class="content-grid">
+        <!-- Center Banner -->
+        <div class="center-banner">
+          <div class="center-banner-content">
+            <div class="center-banner-title">PLAY<br>DIFFRNT</div>
+            <div class="center-banner-subtitle">(Change the way it plays)</div>
+            <button class="play-button">PLAY</button>
           </div>
         </div>
 
-        <div class="modal-section">
-          <button id="toggle3RulesBtn" class="modal-btn modal-btn-secondary" onclick="toggle3RulesMode()">
-            3 Rules Mode: OFF
-          </button>
+        <!-- Right Sidebar Panels -->
+        <div class="right-sidebar">
+          <!-- Stats Panel -->
+          <div class="info-panel stats-panel">
+            <div class="info-panel-title">STATS</div>
+            <div class="info-panel-content">
+              <!-- Stats content here -->
+            </div>
+          </div>
+
+          <!-- Last Games Panel -->
+          <div class="info-panel last-games-panel">
+            <div class="info-panel-title">LAST GAMES</div>
+            <div class="info-panel-content">
+              <!-- Last games content here -->
+            </div>
+          </div>
         </div>
       </div>
     </div>
