@@ -1,3 +1,76 @@
+/* ============ FONT FACES ============ */
+@font-face {
+  font-family: 'Delight';
+  src: url('../fonts/Delight/Delight/Web-TT/Delight-Thin.woff2') format('woff2'),
+       url('../fonts/Delight/Delight/Web-TT/Delight-Thin.woff') format('woff');
+  font-weight: 100;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Delight';
+  src: url('../fonts/Delight/Delight/Web-TT/Delight-ExtraLight.woff2') format('woff2'),
+       url('../fonts/Delight/Delight/Web-TT/Delight-ExtraLight.woff') format('woff');
+  font-weight: 200;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Delight';
+  src: url('../fonts/Delight/Delight/Web-TT/Delight-Light.woff2') format('woff2'),
+       url('../fonts/Delight/Delight/Web-TT/Delight-Light.woff') format('woff');
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Delight';
+  src: url('../fonts/Delight/Delight/Web-TT/Delight-Regular.woff2') format('woff2'),
+       url('../fonts/Delight/Delight/Web-TT/Delight-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Delight';
+  src: url('../fonts/Delight/Delight/Web-TT/Delight-Medium.woff2') format('woff2'),
+       url('../fonts/Delight/Delight/Web-TT/Delight-Medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Delight';
+  src: url('../fonts/Delight/Delight/Web-TT/Delight-SemiBold.woff2') format('woff2'),
+       url('../fonts/Delight/Delight/Web-TT/Delight-SemiBold.woff') format('woff');
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Delight';
+  src: url('../fonts/Delight/Delight/Web-TT/Delight-Bold.woff2') format('woff2'),
+       url('../fonts/Delight/Delight/Web-TT/Delight-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Delight';
+  src: url('../fonts/Delight/Delight/Web-TT/Delight-ExtraBold.woff2') format('woff2'),
+       url('../fonts/Delight/Delight/Web-TT/Delight-ExtraBold.woff') format('woff');
+  font-weight: 800;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Delight';
+  src: url('../fonts/Delight/Delight/Web-TT/Delight-Black.woff2') format('woff2'),
+       url('../fonts/Delight/Delight/Web-TT/Delight-Black.woff') format('woff');
+  font-weight: 900;
+  font-style: normal;
+}
+
 /* ============ CSS VARIABLES ============ */
 :root {
   --color-primary: #007BFF;
@@ -16,6 +89,68 @@
   --color-highlight-dark: #AAA23B;
 }
 
+/* ============ ACHIEVEMENT NOTIFICATIONS ============ */
+.achievement-notification {
+  position: fixed;
+  top: -200px;
+  right: 20px;
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  color: #000;
+  padding: 20px 25px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(255, 215, 0, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-width: 320px;
+  z-index: 10000;
+  transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.achievement-notification.show {
+  top: 20px;
+}
+
+.achievement-icon {
+  font-size: 48px;
+  line-height: 1;
+  animation: achievementPulse 1s ease infinite;
+}
+
+@keyframes achievementPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.achievement-content {
+  flex: 1;
+}
+
+.achievement-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.8;
+  margin-bottom: 4px;
+}
+
+.achievement-name {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.achievement-desc {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
 /* ============ BASE STYLES ============ */
 * {
   margin: 0;
@@ -24,7 +159,7 @@
 }
 
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Delight', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background-color: var(--color-dark);
   color: var(--color-text);
   transition: background-color 0.3s ease;
@@ -148,7 +283,10 @@ body {
   box-shadow: 0 0 10px var(--color-gold);
   border-color: var(--color-gold);
 }
-
+/* ======= Chess font class ======= */
+.chess-font {
+   font-family: 'CHESSVETICA', sans-serif;
+}
 /* ============ TOAST NOTIFICATIONS ============ */
 .toast-notification {
   position: fixed;

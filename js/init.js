@@ -17,11 +17,27 @@ document.addEventListener('DOMContentLoaded', function() {
   // Step 3: Initialize chess game and board
   initChessGame();
 
-  // Step 4: Show main menu after loading animation completes
+  // Step 4: Check authentication and show appropriate screen
   // Wait 3 seconds for the fill animation to complete (2.5s animation + 0.5s buffer)
   setTimeout(function() {
     hideLoadingScreen();
-    showMainMenu();
+
+    // Check if user has an active session
+    if (checkSession()) {
+      // User is authenticated, show main menu
+      console.log('User authenticated, showing main menu');
+      showMainMenu();
+
+      // Update user badge with saved user data
+      const currentUser = getCurrentUser();
+      if (currentUser) {
+        updateUserBadge(currentUser);
+      }
+    } else {
+      // No session found, show auth modal
+      console.log('No session found, showing auth modal');
+      showAuthModal();
+    }
   }, 3000);
 
   console.log('Chess Application initialized successfully');

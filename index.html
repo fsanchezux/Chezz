@@ -35,8 +35,14 @@
   <!-- Chessboard.js library -->
   <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
 
+  <!-- ============ GOOGLE IDENTITY SERVICES ============ -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
   <!-- ============ CUSTOM JAVASCRIPT MODULES ============ -->
   <!-- Load in order of dependency -->
+  <script src="js/auth.js"></script>
+  <script src="js/stats.js"></script>
+  <script src="js/debug.js"></script>
   <script src="js/theme.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/websocket.js"></script>
@@ -90,41 +96,45 @@
           <span class="material-symbols-outlined bottom-menu-icon">settings</span>
           <span>Settings</span>
         </div>
+        <div class="bottom-menu-item" onclick="openDebugPanel()">
+          <span class="material-symbols-outlined bottom-menu-icon">bug_report</span>
+          <span>Debug Panel</span>
+        </div>
+        <div class="bottom-menu-item" onclick="signOut()">
+          <span class="material-symbols-outlined bottom-menu-icon">logout</span>
+          <span>Sign out</span>
+        </div>
       </div>
     </div>
 
     <!-- Main Content -->
     <div class="main-content">
-      <!-- Top Bar -->
-      <div class="top-bar">
-        <div class="user-info">
-          <div class="settings-icon">
-            <span class="material-symbols-outlined">settings</span>
-          </div>
-        </div>
-        <div class="user-badge">
-          <div class="user-badge-icon">♟</div>
-          <div class="user-badge-info">
-            <div class="user-badge-title">CALLALTA</div>
-            <div class="user-badge-name">ELO 500</div>
-            <div class="user-badge-elo">W 60 L 5 D 20</div>
-          </div>
-        </div>
-      </div>
-
       <!-- Content Grid -->
       <div class="content-grid">
         <!-- Center Banner -->
         <div class="center-banner">
+          <div class="center-banner-settings">
+            <span class="chess-font">P</span>
+          </div>
           <div class="center-banner-content">
             <div class="center-banner-title">PLAY<br>DIFFRNT</div>
             <div class="center-banner-subtitle">(Change the way it plays)</div>
-            <button class="play-button">PLAY</button>
           </div>
+          <button class="play-button">PLAY</button>
         </div>
 
         <!-- Right Sidebar Panels -->
         <div class="right-sidebar">
+          <!-- User Badge -->
+          <div class="user-badge">
+            <div class="user-badge-icon">♟</div>
+            <div class="user-badge-info">
+              <div class="user-badge-title">CALLALTA</div>
+              <div class="user-badge-name">ELO 500</div>
+              <div class="user-badge-elo">W 60 L 5 D 20</div>
+            </div>
+          </div>
+
           <!-- Stats Panel -->
           <div class="info-panel stats-panel">
             <div class="info-panel-title">STATS</div>
@@ -140,6 +150,45 @@
               <!-- Last games content here -->
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ AUTH MODAL ============ -->
+  <div id="authModal" class="modal-overlay">
+    <div class="modal-content auth-modal">
+      <div class="modal-header">
+        <div class="auth-logo">
+          <div class="auth-logo-icon">K</div>
+          <div class="auth-logo-text">CHEZZ</div>
+        </div>
+        <div class="modal-title">Welcome Back</div>
+        <div class="modal-subtitle">Sign in to continue playing</div>
+      </div>
+
+      <div class="modal-body">
+        <button class="auth-btn google-btn" onclick="signInWithGoogle()">
+          <svg class="google-icon" viewBox="0 0 24 24" width="20" height="20">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          Continue with Google
+        </button>
+
+        <div class="auth-divider">
+          <span>or</span>
+        </div>
+
+        <button class="auth-btn guest-btn" onclick="continueAsGuest()">
+          <span class="material-symbols-outlined">person</span>
+          Continue as Guest
+        </button>
+
+        <div class="auth-footer">
+          <p>By continuing, you agree to our Terms of Service and Privacy Policy</p>
         </div>
       </div>
     </div>
@@ -249,8 +298,133 @@
     </div>
   </div>
 
+  <!-- ============ DEBUG/TESTING PANEL ============ -->
+  <div id="debugPanel" class="modal-overlay">
+    <div class="modal-content debug-panel">
+      <div class="modal-header">
+        <div class="modal-title">🛠️ Debug Panel</div>
+        <div class="modal-subtitle">Testing and configuration tools</div>
+        <button class="debug-close-btn" onclick="closeDebugPanel()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Current Stats Display -->
+        <div class="debug-section">
+          <div class="debug-section-title">Current Stats</div>
+          <div id="currentStatsDisplay" class="debug-stats-display">
+            <div class="debug-stat-item">
+              <span class="debug-stat-label">User ID:</span>
+              <span id="debugUserId" class="debug-stat-value">-</span>
+            </div>
+            <div class="debug-stat-item">
+              <span class="debug-stat-label">ELO:</span>
+              <span id="debugElo" class="debug-stat-value">-</span>
+            </div>
+            <div class="debug-stat-item">
+              <span class="debug-stat-label">Total Games:</span>
+              <span id="debugTotalGames" class="debug-stat-value">-</span>
+            </div>
+            <div class="debug-stat-item">
+              <span class="debug-stat-label">Record:</span>
+              <span id="debugRecord" class="debug-stat-value">-</span>
+            </div>
+            <div class="debug-stat-item">
+              <span class="debug-stat-label">Current Streak:</span>
+              <span id="debugStreak" class="debug-stat-value">-</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="debug-section">
+          <div class="debug-section-title">Quick Actions</div>
+          <div class="debug-buttons">
+            <button class="debug-btn debug-btn-primary" onclick="debugRefreshStats()">
+              🔄 Refresh Stats
+            </button>
+            <button class="debug-btn debug-btn-success" onclick="debugAddWin()">
+              ✅ Add Win
+            </button>
+            <button class="debug-btn debug-btn-danger" onclick="debugAddLoss()">
+              ❌ Add Loss
+            </button>
+            <button class="debug-btn debug-btn-secondary" onclick="debugAddDraw()">
+              🤝 Add Draw
+            </button>
+          </div>
+        </div>
+
+        <!-- Manual Stats Modification -->
+        <div class="debug-section">
+          <div class="debug-section-title">Manual Modification</div>
+          <div class="debug-form">
+            <div class="debug-input-group">
+              <label>ELO:</label>
+              <input type="number" id="debugInputElo" class="debug-input" placeholder="500">
+            </div>
+            <div class="debug-input-group">
+              <label>Wins:</label>
+              <input type="number" id="debugInputWins" class="debug-input" placeholder="0">
+            </div>
+            <div class="debug-input-group">
+              <label>Losses:</label>
+              <input type="number" id="debugInputLosses" class="debug-input" placeholder="0">
+            </div>
+            <div class="debug-input-group">
+              <label>Draws:</label>
+              <input type="number" id="debugInputDraws" class="debug-input" placeholder="0">
+            </div>
+            <button class="debug-btn debug-btn-primary" onclick="debugApplyManualStats()">
+              💾 Apply Changes
+            </button>
+          </div>
+        </div>
+
+        <!-- Achievement Testing -->
+        <div class="debug-section">
+          <div class="debug-section-title">Achievement Testing</div>
+          <div class="debug-buttons">
+            <button class="debug-btn debug-btn-info" onclick="debugShowAchievement('first_win')">
+              🏆 First Win
+            </button>
+            <button class="debug-btn debug-btn-info" onclick="debugShowAchievement('streak_5')">
+              🔥 Streak 5
+            </button>
+            <button class="debug-btn debug-btn-info" onclick="debugShowAchievement('elo_1000')">
+              🌟 ELO 1000
+            </button>
+          </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="debug-section debug-danger-zone">
+          <div class="debug-section-title">⚠️ Danger Zone</div>
+          <div class="debug-buttons">
+            <button class="debug-btn debug-btn-warning" onclick="debugResetStats()">
+              🔄 Reset All Stats
+            </button>
+            <button class="debug-btn debug-btn-danger" onclick="debugClearStorage()">
+              🗑️ Clear LocalStorage
+            </button>
+            <button class="debug-btn debug-btn-secondary" onclick="debugExportData()">
+              📥 Export Data
+            </button>
+          </div>
+        </div>
+
+        <!-- Recent Games -->
+        <div class="debug-section">
+          <div class="debug-section-title">Recent Games (Last 5)</div>
+          <div id="debugRecentGames" class="debug-games-list">
+            <!-- Will be populated dynamically -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ============ MAIN GAME CONTAINER ============ -->
-  <div class="container">
+  <div class="container" style="display:none;">
     <!-- Header Section -->
     <div class="row">
       <div class="col-md-12 text-center" style="margin-bottom: 20px;">

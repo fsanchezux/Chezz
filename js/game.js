@@ -97,6 +97,9 @@ function onDrop(source, target) {
     sendMove(JSON.stringify(move));
   }
 
+  // Check if game is over after this move
+  checkGameEnd();
+
   // Make AI move if it's AI game
   if(window.isAIGame && game.turn() === window.aiColor) {
     setTimeout(makeRandomMove, 500);
@@ -121,6 +124,9 @@ function makeRandomMove() {
   if(window.threeRulesEnabled) {
     handleSpecialMove(move);
   }
+
+  // Check if game is over after AI move
+  checkGameEnd();
 }
 
 // Apply promotion
@@ -234,4 +240,111 @@ function resetThreeRulesState() {
   window.blackCastling = false;
   window.blackCanChangeOnce = false;
   window.blackHasUsedChange = false;
+}
+
+// Check if game has ended and record stats
+function checkGameEnd() {
+  if (!game.game_over()) {
+    return;
+  }
+
+  var currentUser = getCurrentUser();
+  if (!currentUser) {
+    console.log('No user logged in, skipping stats');
+    return;
+  }
+
+  var endReason = '';
+  var result = '';
+  var playerColor = '';
+  var opponentName = '';
+
+  // Determine end reason
+  if (game.in_checkmate()) {
+    endReason = 'checkmate';
+  } else if (game.in_stalemate()) {
+    endReason = 'stalemate';
+  } else if (game.in_threefold_repetition()) {
+    endReason = 'threefold_repetition';
+  } else if (game.insufficient_material()) {
+    endReason = 'insufficient_material';
+  } else if (game.in_draw()) {
+    endReason = 'draw';
+  }
+
+  // Determine result based on game mode
+  if (window.gameMode === 'singleplayer') {
+    if (window.isAIGame) {
+      // Playing vs AI
+      playerColor = window.playerColor;
+      opponentName = 'Computer';
+
+      if (game.in_checkmate()) {
+        // The player who just moved won (it's the other player's turn when checkmate happens)
+        var winner = game.turn() === 'w' ? 'b' : 'w';
+        result = winner === playerColor ? 'win' : 'loss';
+      } else {
+        result = 'draw';
+      }
+    } else {
+      // Playing vs human locally
+      // For local 2-player, we can only track from one perspective
+      // Let's consider the current user as player 1 (white)
+      playerColor = 'w';
+      opponentName = window.player2Name || 'Player 2';
+
+      if (game.in_checkmate()) {
+        var winner = game.turn() === 'w' ? 'b' : 'w';
+        result = winner === 'w' ? 'win' : 'loss';
+      } else {
+        result = 'draw';
+      }
+    }
+  } else if (window.gameMode === 'multiplayer') {
+    // Online multiplayer
+    playerColor = window.side;
+    opponentName = 'Online Opponent';
+
+    if (game.in_checkmate()) {
+      var winner = game.turn() === 'w' ? 'b' : 'w';
+      result = winner === playerColor ? 'win' : 'loss';
+    } else {
+      result = 'draw';
+    }
+  }
+
+  // Get PGN (simplified version)
+  var pgn = window.moveHistory.join(', ');
+
+  // Record the game
+  var gameData = {
+    opponent: opponentName,
+    opponentType: window.isAIGame ? 'ai' : 'human',
+    result: result,
+    color: playerColor === 'w' ? 'white' : 'black',
+    moves: window.moveCount,
+    pgn: pgn,
+    gameMode: window.gameMode,
+    endReason: endReason
+  };
+
+  recordGame(gameData);
+
+  // Show game over message
+  var message = '';
+  if (result === 'win') {
+    message = '🎉 Congratulations! You won by ' + endReason + '!';
+  } else if (result === 'loss') {
+    message = '😔 You lost by ' + endReason + '. Better luck next time!';
+  } else {
+    message = '🤝 Game drawn by ' + endReason + '.';
+  }
+
+  setTimeout(function() {
+    showToast(message, 5000);
+    // Update the user badge with new stats
+    updateUserBadge(currentUser);
+  }, 1000);
+
+  console.log('Game ended:', result, endReason);
 }
