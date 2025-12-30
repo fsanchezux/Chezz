@@ -45,6 +45,7 @@
   <script src="js/debug.js"></script>
   <script src="js/theme.js"></script>
   <script src="js/ui.js"></script>
+  <script src="js/timer.js"></script>
   <script src="js/websocket.js"></script>
   <script src="js/threeRules.js"></script>
   <script src="js/game.js"></script>
@@ -109,50 +110,57 @@
 
     <!-- Main Content -->
     <div class="main-content">
-      <!-- Content Grid -->
-      <div class="content-grid">
-        <!-- Center Banner -->
-        <div class="center-banner">
-          <div class="center-banner-settings">
-            <span class="chess-font">P</span>
-          </div>
-          <div class="center-banner-content">
-            <div class="center-banner-title">PLAY<br>DIFFRNT</div>
-            <div class="center-banner-subtitle">(Change the way it plays)</div>
-          </div>
-          <button class="play-button">PLAY</button>
-        </div>
-
-        <!-- Right Sidebar Panels -->
-        <div class="right-sidebar">
-          <!-- User Badge -->
-          <div class="user-badge">
-            <div class="user-badge-icon">♟</div>
-            <div class="user-badge-info">
-              <div class="user-badge-title">CALLALTA</div>
-              <div class="user-badge-name">ELO 500</div>
-              <div class="user-badge-elo">W 60 L 5 D 20</div>
+      <!-- Bootstrap Container -->
+      <div class="container-fluid">
+        <div class="row">
+          <!-- Center Banner Column -->
+          <div class="col-xs-12 col-md-8">
+            <div class="center-banner">
+              <div class="center-banner-settings">
+                <span class="chess-font">P</span>
+              </div>
+              <div class="center-banner-content">
+                <div class="center-banner-title">PLAY<br>DIFFRNT</div>
+                <div class="center-banner-subtitle">(Change the way it plays)</div>
+              </div>
+              <button class="play-button" onclick="selectGameMode('singleplayer')">PLAY</button>
             </div>
           </div>
 
-          <!-- Stats Panel -->
-          <div class="info-panel stats-panel">
-            <div class="info-panel-title">STATS</div>
-            <div class="info-panel-content">
-              <!-- Stats content here -->
-            </div>
+          <!-- Right Sidebar Column -->
+          <div class="col-xs-12 col-md-4 d-sm-none">
+              <!-- User Badge -->
+              <div class="user-badge">
+                <div class="user-badge-icon">♟</div>
+                <div class="user-badge-info">
+                  <div class="user-badge-title" id="user-badge-title">CALLALTA</div>
+                  <div class="user-badge-elo" id="user-badge-elo">ELO 500</div>
+                </div>
+              </div>
           </div>
-
-          <!-- Last Games Panel -->
-          <div class="info-panel last-games-panel">
-            <div class="info-panel-title">LAST GAMES</div>
-            <div class="info-panel-content">
-              <!-- Last games content here -->
+          <div class="col-xs-12 col-md-4">
+              <!-- Stats Panel -->
+              <div class="info-panel stats-panel">
+                <div class="info-panel-title">STATS</div>
+                <div class="info-panel-content">
+                  <!-- Stats content here -->
+                </div>
+              </div>
+              </div>
+              <div class="col-xs-12 col-md-12">
+              <!-- Last Games Panel -->
+              <div class="info-panel last-games-panel">
+                <div class="info-panel-title">LAST GAMES</div>
+                <div class="info-panel-content">
+                  <!-- Last games content here -->
+                </div>
+              </div>
             </div>
+
           </div>
         </div>
       </div>
-    </div>
+
   </div>
 
   <!-- ============ AUTH MODAL ============ -->
@@ -423,6 +431,52 @@
     </div>
   </div>
 
+  <!-- ============ TRANSFORMATION MODAL ============ -->
+  <div id="transformModal" class="modal-overlay">
+    <div class="modal-content transform-modal">
+      <div class="transform-animation">
+        <div class="transform-piece old-piece" id="transformOldPiece">♟</div>
+        <div class="transform-arrow">→</div>
+        <div class="transform-piece new-piece" id="transformNewPiece">♛</div>
+      </div>
+      <div class="transform-text">
+        Transforming to <span id="transformPieceName">Queen</span>...
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SKILL 2 UNLOCK MODAL ============ -->
+  <div id="skill2UnlockModal" class="modal-overlay">
+    <div class="modal-content skill2-unlock-modal">
+      <div class="modal-header">
+        <div class="modal-title">⚡ Skill 2 Unlocked!</div>
+        <div class="modal-subtitle">Choose your power permanently</div>
+      </div>
+
+      <div class="modal-body">
+        <div class="skill2-choices">
+          <div class="skill2-choice-card" onclick="skill2UnlockChooseFreeze()">
+            <div class="skill2-choice-icon">🧊</div>
+            <div class="skill2-choice-title">Freeze Timer</div>
+            <div class="skill2-choice-desc">
+              Pause YOUR timer during your turn.<br>
+              Use it once to think carefully!
+            </div>
+          </div>
+
+          <div class="skill2-choice-card" onclick="skill2UnlockChooseUpgrade()">
+            <div class="skill2-choice-icon">⬆️</div>
+            <div class="skill2-choice-title">Upgrade Skill 1</div>
+            <div class="skill2-choice-desc">
+              Permanently upgrade Skill 1!<br>
+              Now transforms to Bishop/Knight/Rook
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ============ MAIN GAME CONTAINER ============ -->
   <div class="container" style="display:none;">
     <!-- Header Section -->
@@ -508,20 +562,50 @@
       <!-- Center Panel - Chess Board -->
       <div class="col-md-6">
         <div style="max-width: 600px; margin: 0 auto;">
-          <!-- Black Player Name -->
-          <div style="background-color: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px 8px 0 0; border: 2px solid var(--color-border); border-bottom: none;">
-            <div id="blackPlayerName" style="font-size: 16px; font-weight: 600; text-align: center;">
-              ⚫ Black Player
+          <!-- Black Player Info -->
+          <div style="background-color: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px 8px 0 0; border: 2px solid var(--color-border); border-bottom: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <div id="blackPlayerName" style="font-size: 16px; font-weight: 600;">
+                ⚫ Black Player
+              </div>
+              <div id="blackTimer" style="font-size: 18px; font-weight: bold; color: var(--color-gold);">
+                5:00
+              </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <div id="blackXPDisplay" style="font-size: 14px; color: #999;">
+                XP: 0
+              </div>
+            </div>
+            <div style="display: flex; gap: 5px;">
+              <button id="blackSkill1Btn" onclick="useSkill1('b')" class="skill-btn" disabled title="Skill 1: Random Transform (21 XP)">S1</button>
+              <button id="blackSkill2Btn" onclick="useSkill2('b')" class="skill-btn" disabled title="Skill 2: Time Control (41 XP)">S2</button>
+              <button id="blackSkill3Btn" onclick="useSkill3('b')" class="skill-btn" disabled title="Skill 3: Queen Transform (90 XP)">S3</button>
             </div>
           </div>
 
           <!-- Chess Board -->
           <div id="board" style="width: 100%; border: 3px solid var(--color-gold); box-shadow: 0 0 20px rgba(255,215,0,0.3);"></div>
 
-          <!-- White Player Name -->
-          <div style="background-color: rgba(0,0,0,0.5); padding: 10px; border-radius: 0 0 8px 8px; border: 2px solid var(--color-border); border-top: none;">
-            <div id="whitePlayerName" style="font-size: 16px; font-weight: 600; text-align: center;">
-              ⚪ White Player
+          <!-- White Player Info -->
+          <div style="background-color: rgba(0,0,0,0.5); padding: 15px; border-radius: 0 0 8px 8px; border: 2px solid var(--color-border); border-top: none;">
+            <div style="display: flex; gap: 5px; margin-bottom: 8px;">
+              <button id="whiteSkill1Btn" onclick="useSkill1('w')" class="skill-btn" disabled title="Skill 1: Random Transform (21 XP)">S1</button>
+              <button id="whiteSkill2Btn" onclick="useSkill2('w')" class="skill-btn" disabled title="Skill 2: Time Control (41 XP)">S2</button>
+              <button id="whiteSkill3Btn" onclick="useSkill3('w')" class="skill-btn" disabled title="Skill 3: Queen Transform (90 XP)">S3</button>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <div id="whiteXPDisplay" style="font-size: 14px; color: #999;">
+                XP: 0
+              </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div id="whitePlayerName" style="font-size: 16px; font-weight: 600;">
+                ⚪ White Player
+              </div>
+              <div id="whiteTimer" style="font-size: 18px; font-weight: bold; color: var(--color-gold);">
+                5:00
+              </div>
             </div>
           </div>
         </div>

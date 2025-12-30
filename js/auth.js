@@ -178,7 +178,7 @@ function updateUserBadge(user) {
   // Update user name
   const userTitle = userBadge.querySelector('.user-badge-title');
   if (userTitle) {
-    userTitle.textContent = user.name || 'Guest Player';
+    userTitle.textContent = user.id || 'Guest Player';
   }
 
   // Update icon if user has a profile picture
@@ -194,15 +194,17 @@ function updateUserBadge(user) {
   // Update stats
   const stats = getFormattedStats(user.id);
   if (stats) {
-    const userBadgeName = userBadge.querySelector('.user-badge-name');
-    if (userBadgeName) {
-      userBadgeName.textContent = `ELO ${stats.elo}`;
-    }
-
+    
+    
     const userBadgeElo = userBadge.querySelector('.user-badge-elo');
     if (userBadgeElo) {
-      userBadgeElo.textContent = stats.record;
+      userBadgeElo.textContent = `ELO ${stats.elo}`;
     }
+
+//const userBadgeStats = userBadge.querySelector('.user-badge-elo');
+  //  if (userBadgeStats) {
+    //  userBadgeStats.textContent = stats.record;
+    //}
   }
 }
 

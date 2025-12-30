@@ -316,3 +316,231 @@ body {
 	opacity: 0.8;
 	font-weight: normal;
 }
+
+/* Skill Buttons */
+.skill-btn {
+	flex: 1;
+	padding: 8px 12px;
+	border: 2px solid var(--color-border);
+	border-radius: 6px;
+	background-color: rgba(0, 0, 0, 0.5);
+	color: #666;
+	font-size: 14px;
+	font-weight: bold;
+	cursor: not-allowed;
+	transition: all 0.3s ease;
+	position: relative;
+	overflow: hidden;
+}
+
+.skill-btn:disabled {
+	opacity: 0.5;
+}
+
+.skill-btn.skill-available {
+	background-color: rgba(255, 215, 0, 0.2);
+	border-color: var(--color-gold);
+	color: var(--color-gold);
+	cursor: pointer;
+	animation: skillGlow 2s ease-in-out infinite;
+}
+
+.skill-btn.skill-available:hover {
+	background-color: rgba(255, 215, 0, 0.4);
+	transform: scale(1.05);
+	box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+}
+
+.skill-btn.skill-available:active {
+	transform: scale(0.98);
+}
+
+@keyframes skillGlow {
+	0%, 100% {
+		box-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
+	}
+	50% {
+		box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+	}
+}
+
+/* Timer Blink Animation */
+@keyframes timerBlink {
+	0%, 100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.3;
+	}
+}
+
+/* Skill Active State */
+.skill-btn.skill-active {
+	background-color: rgba(0, 123, 255, 0.3);
+	border-color: #007bff;
+	color: #007bff;
+	box-shadow: 0 0 20px rgba(0, 123, 255, 0.6);
+}
+
+/* Selectable Pieces Highlight */
+.skill-selectable {
+	box-shadow: inset 0 0 0 4px rgba(0, 255, 0, 0.6) !important;
+	animation: selectablePulse 1.5s ease-in-out infinite;
+	cursor: pointer !important;
+}
+
+@keyframes selectablePulse {
+	0%, 100% {
+		box-shadow: inset 0 0 0 4px rgba(0, 255, 0, 0.6) !important;
+	}
+	50% {
+		box-shadow: inset 0 0 0 4px rgba(0, 255, 0, 1) !important;
+	}
+}
+
+/* Transform Modal */
+.transform-modal {
+	background: linear-gradient(135deg, rgba(20, 20, 40, 0.95), rgba(40, 20, 60, 0.95));
+	border: 3px solid var(--color-gold);
+	min-width: 400px;
+	text-align: center;
+}
+
+.transform-animation {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 30px;
+	padding: 40px 20px;
+}
+
+.transform-piece {
+	font-size: 80px;
+	animation: transformPulse 0.6s ease-in-out infinite;
+}
+
+.old-piece {
+	opacity: 0.6;
+	animation: transformFadeOut 2s ease-out forwards;
+}
+
+.new-piece {
+	color: var(--color-gold);
+	animation: transformFadeIn 2s ease-in forwards, transformGlow 1s ease-in-out infinite;
+}
+
+.transform-arrow {
+	font-size: 40px;
+	color: var(--color-gold);
+	animation: transformSlide 1s ease-in-out infinite;
+}
+
+.transform-text {
+	font-size: 20px;
+	color: var(--color-gold);
+	font-weight: bold;
+	padding-bottom: 20px;
+	text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+@keyframes transformPulse {
+	0%, 100% {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(1.1);
+	}
+}
+
+@keyframes transformFadeOut {
+	0% {
+		opacity: 1;
+		transform: scale(1);
+	}
+	100% {
+		opacity: 0.2;
+		transform: scale(0.8);
+	}
+}
+
+@keyframes transformFadeIn {
+	0% {
+		opacity: 0;
+		transform: scale(0.5);
+	}
+	100% {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+@keyframes transformGlow {
+	0%, 100% {
+		text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+	}
+	50% {
+		text-shadow: 0 0 30px rgba(255, 215, 0, 1), 0 0 50px rgba(255, 215, 0, 0.8);
+	}
+}
+
+@keyframes transformSlide {
+	0%, 100% {
+		transform: translateX(0);
+	}
+	50% {
+		transform: translateX(10px);
+	}
+}
+
+/* Skill 2 Unlock Modal */
+.skill2-unlock-modal {
+	max-width: 700px;
+}
+
+.skill2-choices {
+	display: flex;
+	gap: 20px;
+	margin: 20px 0;
+}
+
+.skill2-choice-card {
+	flex: 1;
+	padding: 30px 20px;
+	background: linear-gradient(135deg, rgba(0, 123, 255, 0.1), rgba(123, 0, 255, 0.1));
+	border: 3px solid var(--color-border);
+	border-radius: 12px;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	text-align: center;
+}
+
+.skill2-choice-card:hover {
+	border-color: var(--color-gold);
+	background: linear-gradient(135deg, rgba(0, 123, 255, 0.2), rgba(123, 0, 255, 0.2));
+	transform: translateY(-5px);
+	box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
+}
+
+.skill2-choice-icon {
+	font-size: 60px;
+	margin-bottom: 15px;
+}
+
+.skill2-choice-title {
+	font-size: 22px;
+	font-weight: bold;
+	color: var(--color-gold);
+	margin-bottom: 15px;
+}
+
+.skill2-choice-desc {
+	font-size: 14px;
+	color: #ccc;
+	line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+	.skill2-choices {
+		flex-direction: column;
+	}
+}

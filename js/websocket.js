@@ -50,6 +50,39 @@ function joinRoom(roomId) {
 function handleServerMessage(move) {
   console.log('Server message:', move);
 
+  // Handle skill transformations
+  if(move.skillTransform) {
+    game.remove(move.square);
+    game.put({type: move.newPiece, color: move.color}, move.square);
+    board.position(game.fen());
+
+    var pieceNames = {b: 'Bishop', n: 'Knight', r: 'Rook', q: 'Queen'};
+    var pieceName = pieceNames[move.newPiece];
+    var colorName = move.color === 'w' ? 'White' : 'Black';
+    showToast('✨ ' + colorName + ' transformed a piece to ' + pieceName + '!', 3000);
+    return;
+  }
+
+  // Handle skill freeze timer
+  if(move.skillFreeze) {
+    if(move.color === 'w') {
+      window.whiteTimerFrozen = true;
+    } else {
+      window.blackTimerFrozen = true;
+    }
+    var colorName = move.color === 'w' ? 'White' : 'Black';
+    showToast('🧊 ' + colorName + ' froze their timer for this turn!', 3000);
+    return;
+  }
+
+  // Handle XP updates
+  if(move.xpUpdate) {
+    window.whiteXP = move.whiteXP;
+    window.blackXP = move.blackXP;
+    updateXPDisplay();
+    return;
+  }
+
   // Handle restart requests
   if(move.restartRequest) {
     $('#restartMessage').html(move.player + ' requests to restart the game. Do you accept?');

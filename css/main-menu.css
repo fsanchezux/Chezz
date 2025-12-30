@@ -59,6 +59,7 @@
   display: flex;
   flex-direction: column;
   gap: 15px;
+  text-align: center;
 }
 
 .menu-item {
@@ -74,6 +75,7 @@
   color: #999;
   text-transform: uppercase;
   letter-spacing: 1px;
+  height: fit-content;
 }
 
 .menu-item.active {
@@ -157,6 +159,12 @@ background: radial-gradient(circle, #d2fe0b1f 0%, rgba(0, 0, 0, 0) 50%, rgba(210
 
 .user-badge-icon {
   font-size: 30px;
+  background-color: rgba(255, 255, 255, 1);
+  color: rgba(210, 254, 11, 1);
+  border: none;
+  border-radius: 100px;
+  padding-left: 5px;
+  padding-right: 5px;
 }
 
 .user-badge-info {
@@ -466,6 +474,29 @@ background: radial-gradient(circle, #d2fe0b1f 0%, rgba(0, 0, 0, 0) 50%, rgba(210
 
   .right-sidebar {
     flex-direction: column;
+  }
+}
+
+/* Extra small screens: hide the fixed sidebar
+   and make the menu buttons smaller & stacked vertically */
+@media (max-width: 480px) {
+  .sidebar {
+    display: none;
+  }
+
+  .main-content {
+    margin-left: 0;
+    padding: 15px;
+  }
+
+  .sidebar-menu {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .menu-item {
+    padding: 8px 10px;
+    font-size: 11px;
   }
 }
 

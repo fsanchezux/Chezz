@@ -17,8 +17,8 @@ window.lastSquareFrom = null;
 window.restartRequested = false;
 window.restartAccepted = false;
 
-// 3 Rules mode state
-window.threeRulesEnabled = false;
+// 3 Rules mode state - ALWAYS ENABLED BY DEFAULT
+window.threeRulesEnabled = true;
 window.whitePawnCenter = false;
 window.whiteKnightCenter = false;
 window.whiteCastling = false;
@@ -45,6 +45,7 @@ function initChessGame() {
     snapbackSpeed: 200,
     snapSpeed: 100,
     position: 'start',
+    onDragStart: onDragStart,
     onDrop: onDrop,
     onSnapEnd: onSnapEnd
   });
@@ -58,6 +59,12 @@ function onSnapEnd() {
 }
 
 function onDragStart(source, piece, position, orientation) {
+  // If a skill is active, handle piece click for skill selection
+  if(window.activeSkill) {
+    handleSkillPieceClick(source);
+    return false; // Prevent drag
+  }
+
   if (game.game_over() === true ||
       (game.turn() === 'w' && piece.search(/^b/) !== -1) ||
       (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
@@ -87,10 +94,13 @@ function onDrop(source, target) {
   highlight(move);
   updateMoveHistory(move);
 
-  // Handle 3 Rules mode
+  // Handle skills system (XP and abilities)
   if(window.threeRulesEnabled) {
     handleSpecialMove(move);
   }
+
+  // Switch timer to opponent
+  switchTimer();
 
   // Send move to server in multiplayer mode
   if(window.gameMode === 'multiplayer') {
@@ -124,6 +134,9 @@ function makeRandomMove() {
   if(window.threeRulesEnabled) {
     handleSpecialMove(move);
   }
+
+  // Switch timer back to player
+  switchTimer();
 
   // Check if game is over after AI move
   checkGameEnd();
@@ -162,7 +175,10 @@ function resetGame() {
   window.moveHistory = [];
   window.restartRequested = false;
   window.restartAccepted = false;
-  resetThreeRulesState();
+
+  // Reset skills and timers
+  resetSkillsState();
+  stopAllTimers();
 
   $('#join').addClass('hidden');
   $('#username').addClass('hidden');
@@ -199,7 +215,11 @@ function performRestart() {
   window.restartAccepted = false;
   window.moveCount = 0;
   window.moveHistory = [];
-  resetThreeRulesState();
+
+  // Reset skills and timers
+  resetSkillsState();
+  resetTimers();
+  initializeTimers();
 
   $('#moveCounter').html('0');
   $('#moveHistory').html('');
@@ -227,19 +247,6 @@ function rejectRestart() {
 
 function flipBoard() {
   board.flip();
-}
-
-function resetThreeRulesState() {
-  window.whitePawnCenter = false;
-  window.whiteKnightCenter = false;
-  window.whiteCastling = false;
-  window.whiteCanChangeOnce = false;
-  window.whiteHasUsedChange = false;
-  window.blackPawnCenter = false;
-  window.blackKnightCenter = false;
-  window.blackCastling = false;
-  window.blackCanChangeOnce = false;
-  window.blackHasUsedChange = false;
 }
 
 // Check if game has ended and record stats

@@ -17,6 +17,12 @@ function selectGameMode(mode) {
 function showSinglePlayerNamesModal() {
   hideModal('mainMenuModal');
   showModal('singleplayerNamesModal');
+
+  // Pre-select AI mode by default
+  selectOpponentType('ai');
+
+  // Pre-select white color by default
+  selectPlayerColor('w');
 }
 
 function showMultiplayerSetup() {
@@ -104,6 +110,7 @@ function confirmPlayerNames() {
   window.side = 'w';
 
   hideModal('singleplayerNamesModal');
+  hideMainMenu();
   startGame();
 
   // If AI game and AI is white, make first move
@@ -167,6 +174,16 @@ function confirmMultiplayerSetup() {
 }
 
 function startGame() {
+  // Show game container
+  $('.container').show();
+
+  // Re-render the board after container is visible
+  // This ensures the board has proper dimensions
+  setTimeout(function() {
+    board.resize();
+    board.position('start');
+  }, 100);
+
   $('#resetBtn').show();
   $('#restartBtn').show();
   $('#turn').removeClass('hidden');
@@ -175,6 +192,13 @@ function startGame() {
   if(window.side === 'b') {
     board.orientation('black');
   }
+
+  // Initialize timers
+  initializeTimers();
+
+  // Initialize XP display
+  updateXPDisplay();
+  updateSkillButtons();
 }
 
 function toggle3RulesMode() {
