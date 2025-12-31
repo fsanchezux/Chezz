@@ -234,7 +234,7 @@ function selectDecentMove(possibleMoves) {
 
 // Select a good move (prioritizes captures and checks)
 function selectGoodMove(possibleMoves) {
-  // Prioritize: 1) Checkmate, 2) Checks, 3) Captures, 4) Development
+  // Prioritize: 1) Checkmate, 2) Checks, 3) Good captures, 4) Positional
   var checkmates = possibleMoves.filter(function(move) {
     var testGame = new Chess(game.fen());
     testGame.move(move);
@@ -248,34 +248,6 @@ function selectGoodMove(possibleMoves) {
     return testGame.in_check();
   });
 
-  var captures = possibleMoves.filter(function(move) {
-    return move.captured;
-  });
-
-  // 50% prefer checks if available
-  if(checks.length > 0 && Math.random() < 0.5) {
-    return checks[Math.floor(Math.random() * checks.length)];
-  }
-
-  // Otherwise prefer captures
-  if(captures.length > 0) {
-    return captures[Math.floor(Math.random() * captures.length)];
-  }
-
-  return selectDecentMove(possibleMoves);
-}
-
-// Select the best move (evaluates position)
-function selectBestMove(possibleMoves) {
-  // Prioritize: 1) Checkmate, 2) Best captures, 3) Checks, 4) Positional
-  var checkmates = possibleMoves.filter(function(move) {
-    var testGame = new Chess(game.fen());
-    testGame.move(move);
-    return testGame.in_checkmate();
-  });
-  if(checkmates.length > 0) return checkmates[0];
-
-  // Evaluate captures by piece value
   var pieceValues = {p: 1, n: 3, b: 3, r: 5, q: 9, k: 0};
   var captures = possibleMoves.filter(function(move) {
     return move.captured;
@@ -283,35 +255,228 @@ function selectBestMove(possibleMoves) {
     return pieceValues[b.captured] - pieceValues[a.captured];
   });
 
-  // Take best capture if it's good
+  // Take best capture if it's valuable (knight or better)
   if(captures.length > 0 && pieceValues[captures[0].captured] >= 3) {
     return captures[0];
   }
 
-  // Check for checks that lead to advantage
-  var checks = possibleMoves.filter(function(move) {
-    var testGame = new Chess(game.fen());
-    testGame.move(move);
-    return testGame.in_check();
-  });
-
-  if(checks.length > 0 && Math.random() < 0.7) {
-    return checks[0];
+  // 60% prefer checks if available
+  if(checks.length > 0 && Math.random() < 0.6) {
+    return checks[Math.floor(Math.random() * checks.length)];
   }
 
-  // Otherwise take any good capture or random good move
+  // Otherwise take any capture
   if(captures.length > 0) {
     return captures[0];
   }
 
-  return selectGoodMove(possibleMoves);
+  // Evaluate remaining moves by position
+  var evaluatedMoves = possibleMoves.map(function(move) {
+    var testGame = new Chess(game.fen());
+    testGame.move(move);
+    return {
+      move: move,
+      score: evaluatePosition(testGame)
+    };
+  });
+
+  evaluatedMoves.sort(function(a, b) {
+    return b.score - a.score;
+  });
+
+  // Pick from top 5 moves
+  var topMoves = evaluatedMoves.slice(0, Math.min(5, evaluatedMoves.length));
+  return topMoves[Math.floor(Math.random() * topMoves.length)].move;
+}
+
+// Piece-Square Tables for positional evaluation
+var pieceSquareTables = {
+  p: [ // Pawn
+    0,  0,  0,  0,  0,  0,  0,  0,
+    50, 50, 50, 50, 50, 50, 50, 50,
+    10, 10, 20, 30, 30, 20, 10, 10,
+    5,  5, 10, 25, 25, 10,  5,  5,
+    0,  0,  0, 20, 20,  0,  0,  0,
+    5, -5,-10,  0,  0,-10, -5,  5,
+    5, 10, 10,-20,-20, 10, 10,  5,
+    0,  0,  0,  0,  0,  0,  0,  0
+  ],
+  n: [ // Knight
+    -50,-40,-30,-30,-30,-30,-40,-50,
+    -40,-20,  0,  0,  0,  0,-20,-40,
+    -30,  0, 10, 15, 15, 10,  0,-30,
+    -30,  5, 15, 20, 20, 15,  5,-30,
+    -30,  0, 15, 20, 20, 15,  0,-30,
+    -30,  5, 10, 15, 15, 10,  5,-30,
+    -40,-20,  0,  5,  5,  0,-20,-40,
+    -50,-40,-30,-30,-30,-30,-40,-50
+  ],
+  b: [ // Bishop
+    -20,-10,-10,-10,-10,-10,-10,-20,
+    -10,  0,  0,  0,  0,  0,  0,-10,
+    -10,  0,  5, 10, 10,  5,  0,-10,
+    -10,  5,  5, 10, 10,  5,  5,-10,
+    -10,  0, 10, 10, 10, 10,  0,-10,
+    -10, 10, 10, 10, 10, 10, 10,-10,
+    -10,  5,  0,  0,  0,  0,  5,-10,
+    -20,-10,-10,-10,-10,-10,-10,-20
+  ],
+  r: [ // Rook
+    0,  0,  0,  0,  0,  0,  0,  0,
+    5, 10, 10, 10, 10, 10, 10,  5,
+    -5,  0,  0,  0,  0,  0,  0, -5,
+    -5,  0,  0,  0,  0,  0,  0, -5,
+    -5,  0,  0,  0,  0,  0,  0, -5,
+    -5,  0,  0,  0,  0,  0,  0, -5,
+    -5,  0,  0,  0,  0,  0,  0, -5,
+    0,  0,  0,  5,  5,  0,  0,  0
+  ],
+  q: [ // Queen
+    -20,-10,-10, -5, -5,-10,-10,-20,
+    -10,  0,  0,  0,  0,  0,  0,-10,
+    -10,  0,  5,  5,  5,  5,  0,-10,
+    -5,  0,  5,  5,  5,  5,  0, -5,
+    0,  0,  5,  5,  5,  5,  0, -5,
+    -10,  5,  5,  5,  5,  5,  0,-10,
+    -10,  0,  5,  0,  0,  0,  0,-10,
+    -20,-10,-10, -5, -5,-10,-10,-20
+  ],
+  k: [ // King (middlegame)
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -30,-40,-40,-50,-50,-40,-40,-30,
+    -20,-30,-30,-40,-40,-30,-30,-20,
+    -10,-20,-20,-20,-20,-20,-20,-10,
+    20, 20,  0,  0,  0,  0, 20, 20,
+    20, 30, 10,  0,  0, 10, 30, 20
+  ]
+};
+
+// Get piece-square table value for a position
+function getPieceSquareValue(piece, square, color) {
+  var tables = pieceSquareTables[piece.toLowerCase()];
+  if(!tables) return 0;
+
+  var squareIndex;
+  if(color === 'w') {
+    // White pieces read table from bottom to top
+    var file = square.charCodeAt(0) - 97; // a=0, b=1, etc
+    var rank = 8 - parseInt(square[1]); // flip for white
+    squareIndex = rank * 8 + file;
+  } else {
+    // Black pieces read table from top to bottom
+    var file = square.charCodeAt(0) - 97;
+    var rank = parseInt(square[1]) - 1;
+    squareIndex = rank * 8 + file;
+  }
+
+  return tables[squareIndex] || 0;
+}
+
+// Evaluate position score for a given board state
+function evaluatePosition(testGame) {
+  var pieceValues = {p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000};
+  var score = 0;
+  var aiColor = window.aiColor || 'b';
+
+  var board = testGame.board();
+
+  // Evaluate each square
+  for(var i = 0; i < 8; i++) {
+    for(var j = 0; j < 8; j++) {
+      var piece = board[i][j];
+      if(piece) {
+        var square = String.fromCharCode(97 + j) + (8 - i);
+        var pieceValue = pieceValues[piece.type];
+        var positionalValue = getPieceSquareValue(piece.type, square, piece.color);
+        var totalValue = pieceValue + positionalValue;
+
+        if(piece.color === aiColor) {
+          score += totalValue;
+        } else {
+          score -= totalValue;
+        }
+      }
+    }
+  }
+
+  // Bonus for checkmate
+  if(testGame.in_checkmate()) {
+    return testGame.turn() === aiColor ? -999999 : 999999;
+  }
+
+  // Bonus for check
+  if(testGame.in_check()) {
+    score += testGame.turn() === aiColor ? -50 : 50;
+  }
+
+  // Bonus for castling rights
+  if(aiColor === 'w') {
+    if(testGame.fen().includes('K')) score += 30;
+    if(testGame.fen().includes('Q')) score += 30;
+  } else {
+    if(testGame.fen().includes('k')) score += 30;
+    if(testGame.fen().includes('q')) score += 30;
+  }
+
+  // Mobility bonus (number of legal moves available)
+  var mobility = testGame.moves().length;
+  if(testGame.turn() === aiColor) {
+    score += mobility * 2;
+  } else {
+    score -= mobility * 2;
+  }
+
+  return score;
+}
+
+// Select the best move (evaluates position)
+function selectBestMove(possibleMoves) {
+  // Prioritize: 1) Checkmate, 2) Best evaluated move
+  var checkmates = possibleMoves.filter(function(move) {
+    var testGame = new Chess(game.fen());
+    testGame.move(move);
+    return testGame.in_checkmate();
+  });
+  if(checkmates.length > 0) return checkmates[0];
+
+  // Evaluate all moves and pick the best
+  var evaluatedMoves = possibleMoves.map(function(move) {
+    var testGame = new Chess(game.fen());
+    testGame.move(move);
+    var score = evaluatePosition(testGame);
+
+    return {
+      move: move,
+      score: score
+    };
+  });
+
+  // Sort by score (highest first)
+  evaluatedMoves.sort(function(a, b) {
+    return b.score - a.score;
+  });
+
+  // Pick from top 3 moves randomly to add variety
+  var topMoves = evaluatedMoves.slice(0, Math.min(3, evaluatedMoves.length));
+  var selectedEval = topMoves[Math.floor(Math.random() * topMoves.length)];
+
+  return selectedEval.move;
 }
 
 // Simple check if move leaves piece hanging
 function isMoveLeavingPieceHanging(testGame, move) {
-  // Very basic implementation - just check if the moved piece is now attacked
-  // This is simplified; a real engine would do much more
-  return false; // For now, assume moves don't hang pieces
+  // Check if the moved piece can be captured
+  var aiColor = window.aiColor || 'b';
+  var opponentMoves = testGame.moves({verbose: true});
+
+  // Check if opponent can capture the piece we just moved
+  var canCapture = opponentMoves.some(function(oppMove) {
+    return oppMove.to === move.to && oppMove.captured;
+  });
+
+  return canCapture;
 }
 
 // AI tries to use available skills
@@ -397,6 +562,10 @@ function aiUseSkill1(color) {
     window.blackSkill1Used = true;
   }
 
+  // Clear active skill to prevent blocking player moves
+  window.activeSkill = null;
+  clearPieceHighlights();
+
   updateSkillButtons();
 
   var pieceNames = {b: 'Bishop', n: 'Knight', r: 'Rook'};
@@ -437,6 +606,10 @@ function aiUseSkill3(color) {
   } else {
     window.blackSkill3Used = true;
   }
+
+  // Clear active skill to prevent blocking player moves
+  window.activeSkill = null;
+  clearPieceHighlights();
 
   updateSkillButtons();
 
