@@ -80,6 +80,9 @@
   --white: #f9f9f9;
   --dark-grey: #909090;
   --light-grey: #b8b8b6;
+  --good: #00cc70;
+  --great: #2e89e5;
+  --brilliant: #2b48b9;
 
   /* Legacy support - mapped to design system colors */
   --color-green: #d2fe0b;

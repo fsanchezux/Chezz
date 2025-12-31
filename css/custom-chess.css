@@ -255,16 +255,13 @@ body {
 .skill-btn {
 	flex: 1;
 	padding: 8px 12px;
-	border: 2px solid var(--light-grey);
-	border-radius: 6px;
-	background-color: var(--black);
 	color: var(--dark-grey);
-	font-size: 14px;
+	font-size: 22pt;
 	font-weight: bold;
 	cursor: not-allowed;
 	position: relative;
 	overflow: hidden;
-	box-shadow: none;
+
 }
 
 .skill-btn:disabled {
@@ -272,15 +269,11 @@ body {
 }
 
 .skill-btn.skill-available {
-	background-color: var(--black);
-	border-color: var(--green);
-	color: var(--green);
+	color: var(--brilliant);
 	cursor: pointer;
 }
 
 .skill-btn.skill-active {
-	background-color: var(--black);
-	border-color: var(--green);
 	color: var(--green);
 }
 
@@ -376,3 +369,15 @@ body {
 		flex-direction: column;
 	}
 }
+
+/* white square */
+.white-1e1d7 {
+	background-color: var(--white) !important;
+	color: var(--green) !important;
+  }
+  
+  /* black square */
+  .black-3c85d {
+	background-color: var(--green) !important;
+	color: var(--white) !important;
+  }

@@ -218,25 +218,17 @@
     <div class="modal-content">
       <div class="modal-header">
         <div class="modal-title">Single Player Setup</div>
-        <div class="modal-subtitle">Choose your opponent</div>
       </div>
 
       <div class="modal-body">
         <!-- Opponent Type Selection -->
         <div class="modal-section">
           <div class="modal-section-title">Select Opponent</div>
-          <div class="modal-options">
-            <div id="humanOption" class="modal-option selected" onclick="selectOpponentType('human')">
-              <div class="modal-option-icon">👥</div>
-              <div class="modal-option-title">Human</div>
-              <div class="modal-option-desc">Local 2 players</div>
-            </div>
-
-            <div id="aiOption" class="modal-option" onclick="selectOpponentType('ai')">
-              <div class="modal-option-icon">🤖</div>
-              <div class="modal-option-title">Computer</div>
-              <div class="modal-option-desc">Play vs AI</div>
-            </div>
+          <div class="form-check form-switch" onclick="selectOpponentType()">
+            <input class="form-check-input" type="checkbox" role="switch" id="chckOppnentType">
+            <label id="lblOpponentType" class="form-check-label" for="chckOppnentType">2 players local</label>
+          </div>
+         
           </div>
         </div>
 
@@ -255,21 +247,17 @@
 
         <!-- Human vs AI Inputs -->
         <div id="aiPlayerInputs" style="display: none;">
-          <div class="modal-input-group">
-            <label class="modal-label">Your Name</label>
-            <input type="text" id="playerNameInput" class="modal-input" placeholder="Enter your name">
-          </div>
-
+     
           <div class="modal-section">
             <div class="modal-section-title">Choose Your Color</div>
             <div class="color-selector">
               <div id="playAsWhite" class="color-option modal-btn-primary selected" onclick="selectPlayerColor('w')">
-                <div class="color-icon">⚪</div>
-                <div class="color-label">White</div>
+                <div class="color-icon chess-font white-text">P</div>
+                <div class="color-label white-text">White</div>
               </div>
               <div id="playAsBlack" class="color-option modal-btn-secondary" onclick="selectPlayerColor('b')">
-                <div class="color-icon">⚫</div>
-                <div class="color-label">Black</div>
+                <div class="color-icon chess-font light-grey-text">P</div>
+                <div class="color-label white-text">Black</div>
               </div>
             </div>
           </div>
@@ -493,26 +481,21 @@
     <!-- Header Section -->
     <div class="row">
       <div class="col-md-12 text-center" style="margin-bottom: 20px;">
-        <h1 style="color: var(--color-gold); font-size: 36px; font-weight: bold; text-shadow: 0 0 10px rgba(255,215,0,0.3);">
-          ♟️ Multiplayer Chess
-        </h1>
+      
       </div>
     </div>
 
     <!-- Game Board and Controls -->
     <div class="row">
       <!-- Left Panel - Player Info & Controls -->
-      <div class="col-md-3">
-        <div style="background-color: rgba(0,0,0,0.3); padding: 20px; border-radius: 8px; border: 2px solid var(--color-border);">
+      <div class="col-md-3"> 
+        <div class="black" style=" padding: 20px; border-radius: 8px;">
           <!-- Player Names -->
           <div id="names" class="hidden label label-info" style="width: 100%; margin-bottom: 15px; font-size: 14px;">
             Players
           </div>
 
-          <!-- Turn Indicator -->
-          <div id="turn" class="hidden label label-white" style="width: 100%; margin-bottom: 15px; font-size: 16px; font-weight: bold;">
-            White's turn
-          </div>
+          
 
           <!-- Online Status -->
           <div id="online" style="color: #999; font-size: 12px; margin-bottom: 15px; text-align: center;">
@@ -521,8 +504,8 @@
 
           <!-- Room Link (Multiplayer) -->
           <div id="roomLinkContainer" style="display: none; margin-bottom: 15px;">
-            <div style="font-size: 12px; color: #999; margin-bottom: 5px;">Room Link:</div>
-            <div style="background-color: rgba(0,0,0,0.5); padding: 8px; border-radius: 4px; font-size: 11px; word-break: break-all; margin-bottom: 5px;">
+            <div class="white-text" style="font-size: 12px;margin-bottom: 5px;">Room Link:</div>
+            <div class="black" style=" padding: 8px; border-radius: 4px; font-size: 11px; word-break: break-all; margin-bottom: 5px;">
               <span id="roomLinkDisplay"></span>
             </div>
             <button class="btn btn-primary btn-sm" onclick="copyRoomLink()" style="width: 100%;">
@@ -533,19 +516,19 @@
           <!-- Game Controls -->
           <div style="margin-top: 20px;">
             <button id="resetBtn" class="btn btn-danger" onclick="resetGame()" style="width: 100%; margin-bottom: 10px; display: none;">
-              🔄 New Game
+              New Game
             </button>
 
             <button id="restartBtn" class="btn btn-warning" onclick="restartGame()" style="width: 100%; margin-bottom: 10px; display: none;">
-              ↺ Restart
+               Restart
             </button>
 
             <button class="btn btn-primary" onclick="flipBoard()" style="width: 100%; margin-bottom: 10px;">
-              🔃 Flip Board
+               Flip Board
             </button>
 
             <button id="themeToggleBtn" class="btn btn-primary" onclick="toggleTheme()" style="width: 100%;">
-              ☀️ Light Mode
+               Light Mode
             </button>
           </div>
 
@@ -561,25 +544,19 @@
           </div>
         </div>
 
-        <!-- Move Counter -->
-        <div style="margin-top: 20px; background-color: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border: 2px solid var(--color-border);">
-          <div style="font-size: 14px; color: #999; margin-bottom: 5px;">Total Moves:</div>
-          <div id="moveCounter" style="font-size: 32px; font-weight: bold; color: var(--color-gold); text-align: center;">
-            0
-          </div>
-        </div>
+    
       </div>
 
       <!-- Center Panel - Chess Board -->
       <div class="col-md-6">
         <div style="max-width: 600px; margin: 0 auto;">
           <!-- Black Player Info -->
-          <div style="background-color: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px 8px 0 0; border: 2px solid var(--color-border); border-bottom: none;">
+          <div class="black" style="padding: 15px; border-radius: 8px 8px 0 0;  border-bottom: none;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
               <div id="blackPlayerName" style="font-size: 16px; font-weight: 600;">
                 ⚫ Black Player
               </div>
-              <div id="blackTimer" style="font-size: 18px; font-weight: bold; color: var(--color-gold);">
+              <div id="blackTimer" class="green-text" style="font-size: 18px; font-weight: bold;">
                 5:00
               </div>
             </div>
@@ -588,22 +565,22 @@
                 XP: 0
               </div>
             </div>
-            <div style="display: flex; gap: 5px;">
-              <button id="blackSkill1Btn" onclick="useSkill1('b')" class="skill-btn" disabled title="Skill 1: Random Transform (21 XP)">S1</button>
-              <button id="blackSkill2Btn" onclick="useSkill2('b')" class="skill-btn" disabled title="Skill 2: Time Control (41 XP)">S2</button>
-              <button id="blackSkill3Btn" onclick="useSkill3('b')" class="skill-btn" disabled title="Skill 3: Queen Transform (90 XP)">S3</button>
+            <div>
+              <span id="blackSkill1Btn" onclick="useSkill1('b')" class="chess-font skill-btn" disabled title="Skill 1: Random Transform (21 XP)">Blunder</span>
+              <span id="blackSkill2Btn" onclick="useSkill2('b')" class="chess-font skill-btn" disabled title="Skill 2: Time Control (41 XP)">Time</span>
+              <span id="blackSkill3Btn" onclick="useSkill3('b')" class="chess-font skill-btn" disabled title="Skill 3: Queen Transform (90 XP)">Blunder</span>
             </div>
           </div>
 
           <!-- Chess Board -->
-          <div id="board" style="width: 100%; border: 3px solid var(--color-gold); box-shadow: 0 0 20px rgba(255,215,0,0.3);"></div>
+          <div id="board" style="width: 100%; "></div>
 
           <!-- White Player Info -->
-          <div style="background-color: rgba(0,0,0,0.5); padding: 15px; border-radius: 0 0 8px 8px; border: 2px solid var(--color-border); border-top: none;">
-            <div style="display: flex; gap: 5px; margin-bottom: 8px;">
-              <button id="whiteSkill1Btn" onclick="useSkill1('w')" class="skill-btn" disabled title="Skill 1: Random Transform (21 XP)">S1</button>
-              <button id="whiteSkill2Btn" onclick="useSkill2('w')" class="skill-btn" disabled title="Skill 2: Time Control (41 XP)">S2</button>
-              <button id="whiteSkill3Btn" onclick="useSkill3('w')" class="skill-btn" disabled title="Skill 3: Queen Transform (90 XP)">S3</button>
+          <div class="black" style=" padding: 15px; border-radius: 0 0 8px 8px;  border-top: none;">
+            <div style="margin-bottom: 8px;">
+              <span id="whiteSkill1Btn" onclick="useSkill1('w')" class="chess-font skill-btn" disabled title="Skill 1: Random Transform (21 XP)">Blunder</span>
+              <span id="whiteSkill2Btn" onclick="useSkill2('w')" class="chess-font skill-btn" disabled title="Skill 2: Time Control (41 XP)">Time</span>
+              <span id="whiteSkill3Btn" onclick="useSkill3('w')" class="chess-font skill-btn" disabled title="Skill 3: Queen Transform (90 XP)">Blunder</span>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
               <div id="whiteXPDisplay" style="font-size: 14px; color: #999;">
@@ -612,9 +589,9 @@
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <div id="whitePlayerName" style="font-size: 16px; font-weight: 600;">
-                ⚪ White Player
+                 White Player
               </div>
-              <div id="whiteTimer" style="font-size: 18px; font-weight: bold; color: var(--color-gold);">
+              <div id="whiteTimer" style="font-size: 18px; font-weight: bold; " class="green-text">
                 5:00
               </div>
             </div>
@@ -623,16 +600,33 @@
       </div>
 
       <!-- Right Panel - Move History -->
-      <div class="col-md-3">
-        <div style="background-color: rgba(0,0,0,0.3); padding: 20px; border-radius: 8px; border: 2px solid var(--color-border); height: 600px; display: flex; flex-direction: column;">
-          <h4 style="color: var(--color-gold); margin-bottom: 15px; font-size: 18px; font-weight: bold;">
-            📜 Move History
-          </h4>
 
-          <div id="moveHistory" style="flex: 1; overflow-y: auto; background-color: rgba(0,0,0,0.3); padding: 10px; border-radius: 4px; border: 1px solid var(--color-border); font-size: 13px; line-height: 1.6;">
-            <!-- Move history will be populated here -->
+      <div class="col-md-3">
+        <div class="row">
+          <div class="col-md-12">
+            <!-- Turn Indicator -->
+          <div id="turn" class="hidden label label-white" style="width: 100%; margin-bottom: 15px; font-size: 16px; font-weight: bold;">
+            White's turn
+          </div>
+          </div>
+          <div class="col-md-12">
+            <div class="black" style="padding: 20px; border-radius: 8px;  height: 600px; display: flex; flex-direction: column;">
+              <div style="display:flex;justify-content: space-between;align-items: center;">
+                <h4 class="green-text" style="margin-bottom: 15px; font-size: 18px; font-weight: bold;">
+                  Move History
+                </h4>
+                <div id="moveCounter" class="green-text" style="font-size: 12pt; font-weight: bold; text-align: center;">
+                  0
+                </div>
+              </div>
+              
+              <div id="moveHistory" style="flex: 1; overflow-y: auto; background-color: rgba(0,0,0,0.3); padding: 10px; border-radius: 4px; border: 1px solid var(--color-border); font-size: 13px; line-height: 1.6;">
+                <!-- Move history will be populated here -->
+              </div>
+            </div>
           </div>
         </div>
+        
       </div>
     </div>
 

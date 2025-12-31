@@ -4,7 +4,12 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:css": "postcss css/main.css -o css/main.min.css",
+    "build:custom-chess": "postcss css/custom-chess.css -o css/custom-chess.min.css",
+    "build:chessboard": "postcss css/chessboard-0.3.0.css -o css/chessboard-0.3.0.min.css",
+    "build:all": "npm run build:css && npm run build:custom-chess && npm run build:chessboard",
+    "watch:css": "postcss css/main.css -o css/main.min.css --watch"
   },
   "author": "cub",
   "license": "ISC",
@@ -12,5 +17,10 @@
     "connect": "^3.6.6",
     "expressjs": "^1.0.1",
     "ws": "^5.2.1"
+  },
+  "devDependencies": {
+    "cssnano": "^7.1.2",
+    "postcss": "^8.5.6",
+    "postcss-cli": "^11.0.1"
   }
 }

@@ -30,21 +30,24 @@ function showMultiplayerSetup() {
   showModal('multiplayerSetupModal');
 }
 
-function selectOpponentType(type) {
+function selectOpponentType() {
   var humanOption = document.getElementById('humanOption');
   var aiOption = document.getElementById('aiOption');
   var humanInputs = document.getElementById('humanPlayerInputs');
   var aiInputs = document.getElementById('aiPlayerInputs');
+  let chckOppnentType = document.getElementById('chckOppnentType');
+  let lblOpponentType = document.getElementById('lblOpponentType');
+  type = chckOppnentType.checked ? 'ai' : 'human';
 
   if(type === 'human') {
-    humanOption.classList.add('selected');
-    aiOption.classList.remove('selected');
+
     humanInputs.style.display = 'block';
     aiInputs.style.display = 'none';
     window.isAIGame = false;
+    lblOpponentType.innerText = "2 players local"
   } else {
-    aiOption.classList.add('selected');
-    humanOption.classList.remove('selected');
+    lblOpponentType.innerText = "Vs AI"
+
     humanInputs.style.display = 'none';
     aiInputs.style.display = 'block';
     window.isAIGame = true;
@@ -73,12 +76,9 @@ function selectPlayerColor(color) {
 
 function confirmPlayerNames() {
   if(window.isAIGame) {
-    var playerName = document.getElementById('playerNameInput').value.trim();
+    var playerName = currentUser.id;
 
-    if(!playerName) {
-      showToast('Please enter your name');
-      return;
-    }
+    
 
     if(window.playerColor === 'w') {
       window.player1Name = playerName;
