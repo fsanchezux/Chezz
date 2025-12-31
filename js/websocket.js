@@ -54,7 +54,11 @@ function handleServerMessage(move) {
   if(move.skillTransform) {
     game.remove(move.square);
     game.put({type: move.newPiece, color: move.color}, move.square);
-    board.position(game.fen());
+
+    // Force update the FEN and reload to ensure consistency
+    var newFEN = game.fen();
+    game.load(newFEN);
+    board.position(newFEN);
 
     var pieceNames = {b: 'Bishop', n: 'Knight', r: 'Rook', q: 'Queen'};
     var pieceName = pieceNames[move.newPiece];

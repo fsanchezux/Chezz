@@ -217,39 +217,23 @@
   <div id="singleplayerNamesModal" class="modal-overlay">
     <div class="modal-content">
       <div class="modal-header">
-        <div class="modal-title">Single Player Setup</div>
+        <div class="modal-title">Choose your color</div>
       </div>
 
-      <div class="modal-body">
+      <div class="modal-body" style="display:none;">
         <!-- Opponent Type Selection -->
         <div class="modal-section">
-          <div class="modal-section-title">Select Opponent</div>
-          <div class="form-check form-switch" onclick="selectOpponentType()">
+          <div class="form-check form-switch" style="display:none;" onclick="selectOpponentType()">
             <input class="form-check-input" type="checkbox" role="switch" id="chckOppnentType">
             <label id="lblOpponentType" class="form-check-label" for="chckOppnentType">2 players local</label>
           </div>
          
           </div>
         </div>
-
-        <!-- Human vs Human Inputs -->
-        <div id="humanPlayerInputs">
-          <div class="modal-input-group">
-            <label class="modal-label">Player 1 Name (White)</label>
-            <input type="text" id="player1NameInput" class="modal-input" placeholder="Enter player 1 name">
-          </div>
-
-          <div class="modal-input-group">
-            <label class="modal-label">Player 2 Name (Black)</label>
-            <input type="text" id="player2NameInput" class="modal-input" placeholder="Enter player 2 name">
-          </div>
-        </div>
-
         <!-- Human vs AI Inputs -->
         <div id="aiPlayerInputs" style="display: none;">
-     
+
           <div class="modal-section">
-            <div class="modal-section-title">Choose Your Color</div>
             <div class="color-selector">
               <div id="playAsWhite" class="color-option modal-btn-primary selected" onclick="selectPlayerColor('w')">
                 <div class="color-icon chess-font white-text">P</div>
@@ -261,7 +245,45 @@
               </div>
             </div>
           </div>
+
+          <div class="modal-section">
+            <label class="modal-label">AI Difficulty Level</label>
+            <div class="ai-difficulty-selector">
+              <div class="difficulty-option" data-elo="800" onclick="selectAIDifficulty(800)">
+                <div class="difficulty-name green-text">Beginner</div>
+                <div class="difficulty-elo dark-grey-text">ELO 800</div>
+              </div>
+              <div class="difficulty-option modal-btn-primary" data-elo="1200" onclick="selectAIDifficulty(1200)">
+                <div class="difficulty-name green-text">Intermediate</div>
+                <div class="difficulty-elo dark-grey-text">ELO 1200</div>
+              </div>
+              <div class="difficulty-option" data-elo="1600" onclick="selectAIDifficulty(1600)">
+                <div class="difficulty-name green-text">Advanced</div>
+                <div class="difficulty-elo dark-grey-text">ELO 1600</div>
+              </div>
+              <div class="difficulty-option" data-elo="2000" onclick="selectAIDifficulty(2000)">
+                <div class="difficulty-name green-text">Expert</div>
+                <div class="difficulty-elo dark-grey-text">ELO 2000</div>
+              </div>
+            </div>
+          </div>
         </div>
+
+        <!-- Human vs Human Inputs -->
+        <div id="humanPlayerInputs" >
+          <div class="modal-input-group">
+            <label class="modal-label">Player 1 Name (White)</label>
+            <input type="text" id="player1NameInput" class="modal-input" placeholder="Enter player 1 name">
+          </div>
+
+          <div class="modal-input-group">
+            <label class="modal-label">Player 2 Name (Black)</label>
+            <input type="text" id="player2NameInput" class="modal-input" placeholder="Enter player 2 name">
+          </div>
+        </div>
+
+
+
 
         <button class="modal-btn modal-btn-primary" onclick="confirmPlayerNames()">
           Start Game

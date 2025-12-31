@@ -157,8 +157,8 @@
 }
 
 .color-option {
-  width: 80px;
-  height: 80px;
+  width: 120px;
+  height: 100px;
   border: 3px solid var(--light-grey);
   border-radius: 12px;
   cursor: pointer;
@@ -168,6 +168,17 @@
   justify-content: center;
   background-color: var(--black);
   box-shadow: none;
+  pointer-events: auto;
+}
+
+.color-option.modal-btn-primary {
+  border-color: var(--green);
+  background-color: var(--black);
+}
+
+.color-option.modal-btn-secondary {
+  border-color: var(--light-grey);
+  background-color: var(--black);
 }
 
 .color-option.selected {
@@ -183,6 +194,51 @@
 .color-label {
   font-size: 12px;
   font-weight: 600;
+}
+
+/* ============ AI DIFFICULTY SELECTOR ============ */
+
+.ai-difficulty-selector {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.difficulty-option {
+  padding: 16px;
+  border: 3px solid var(--light-grey);
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+  background-color: var(--black);
+  box-shadow: none;
+  pointer-events: auto;
+}
+
+.difficulty-option.modal-btn-primary {
+  border-color: var(--green);
+  background-color: var(--black);
+}
+
+.difficulty-option:hover {
+  border-color: var(--green);
+}
+
+.difficulty-name {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.difficulty-elo {
+  font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .ai-difficulty-selector {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ============ AUTH MODAL ============ */

@@ -30,14 +30,14 @@ function showMultiplayerSetup() {
   showModal('multiplayerSetupModal');
 }
 
-function selectOpponentType() {
+function selectOpponentType(type) {
   var humanOption = document.getElementById('humanOption');
   var aiOption = document.getElementById('aiOption');
   var humanInputs = document.getElementById('humanPlayerInputs');
   var aiInputs = document.getElementById('aiPlayerInputs');
   let chckOppnentType = document.getElementById('chckOppnentType');
   let lblOpponentType = document.getElementById('lblOpponentType');
-  type = chckOppnentType.checked ? 'ai' : 'human';
+  //type = chckOppnentType.checked ? 'ai' : 'human';
 
   if(type === 'human') {
 
@@ -71,6 +71,21 @@ function selectPlayerColor(color) {
     blackBtn.classList.add('modal-btn-primary');
     whiteBtn.classList.remove('modal-btn-primary');
     whiteBtn.classList.add('modal-btn-secondary');
+  }
+}
+
+function selectAIDifficulty(elo) {
+  window.aiELO = elo;
+
+  // Update visual selection
+  var allOptions = document.querySelectorAll('.difficulty-option');
+  allOptions.forEach(function(option) {
+    option.classList.remove('modal-btn-primary');
+  });
+
+  var selectedOption = document.querySelector('.difficulty-option[data-elo="' + elo + '"]');
+  if(selectedOption) {
+    selectedOption.classList.add('modal-btn-primary');
   }
 }
 

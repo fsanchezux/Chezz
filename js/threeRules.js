@@ -39,6 +39,7 @@ const XP_SKILL_3 = 90;  // End game - change any piece to queen
 // XP rewards
 const XP_PER_MOVE = 3;
 const XP_PER_CAPTURE = 1.5;
+const XP_GOOD_MOVE_BONUS = 0.5; // Bonus for good moves (3 + 0.5 = 3.5)
 
 // Update XP display
 function updateXPDisplay() {
@@ -65,6 +66,11 @@ function addXP(move) {
     xpGained += XP_PER_CAPTURE;
   }
 
+  // Bonus XP for good moves
+  if(isGoodMove(move)) {
+    xpGained += XP_GOOD_MOVE_BONUS;
+  }
+
   // Add to the correct player
   if(move.color === 'w') {
     window.whiteXP += xpGained;
@@ -86,6 +92,54 @@ function addXP(move) {
   }
 }
 
+// Evaluate if a move is considered "good"
+function isGoodMove(move) {
+  // Criteria for a good move:
+  // 1. Captures a valuable piece (knight, bishop, rook, or queen)
+  // 2. Gives check
+  // 3. Castling
+  // 4. Pawn promotion
+  // 5. Develops a piece in the opening (first 10 moves)
+
+  var pieceValues = {p: 1, n: 3, b: 3, r: 5, q: 9};
+
+  // Good capture: capturing knight or better
+  if(move.captured && pieceValues[move.captured] >= 3) {
+    return true;
+  }
+
+  // Castling is always a good move
+  if(move.flags && (move.flags.includes('k') || move.flags.includes('q'))) {
+    return true;
+  }
+
+  // Pawn promotion
+  if(move.promotion) {
+    return true;
+  }
+
+  // Check if move gives check
+  var testGame = new Chess(game.fen());
+  testGame.move(move);
+  if(testGame.in_check()) {
+    return true;
+  }
+
+  // Development in opening (first 10 moves, moving knights or bishops)
+  if(window.moveCount <= 10 && (move.piece === 'n' || move.piece === 'b')) {
+    // Check if it's developing from starting position
+    var startingSquares = {
+      n: ['b1', 'g1', 'b8', 'g8'],
+      b: ['c1', 'f1', 'c8', 'f8']
+    };
+    if(startingSquares[move.piece] && startingSquares[move.piece].includes(move.from)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 // Check if player unlocked new skills
 function checkSkillUnlocks(color) {
   if(color === 'w') {
@@ -95,8 +149,10 @@ function checkSkillUnlocks(color) {
     }
     if(window.whiteXP >= XP_SKILL_2 && !window.whiteSkill2Available) {
       window.whiteSkill2Available = true;
-      // Show choice modal immediately
-      showSkill2UnlockModal('w');
+      // Show choice modal immediately, but delay if AI is thinking
+      setTimeout(function() {
+        showSkill2UnlockModal('w');
+      }, 100);
     }
     if(window.whiteXP >= XP_SKILL_3 && !window.whiteSkill3Available) {
       window.whiteSkill3Available = true;
@@ -109,8 +165,10 @@ function checkSkillUnlocks(color) {
     }
     if(window.blackXP >= XP_SKILL_2 && !window.blackSkill2Available) {
       window.blackSkill2Available = true;
-      // Show choice modal immediately
-      showSkill2UnlockModal('b');
+      // Show choice modal immediately, but delay if AI is thinking
+      setTimeout(function() {
+        showSkill2UnlockModal('b');
+      }, 100);
     }
     if(window.blackXP >= XP_SKILL_3 && !window.blackSkill3Available) {
       window.blackSkill3Available = true;
@@ -191,6 +249,20 @@ function updateSkillButtons() {
 // Show Skill 2 unlock modal
 function showSkill2UnlockModal(color) {
   window.skill2UnlockColor = color;
+
+  // If it's AI's turn, auto-choose randomly
+  if(window.isAIGame && color === window.aiColor) {
+    var choices = ['freeze', 'upgrade'];
+    var randomChoice = choices[Math.floor(Math.random() * choices.length)];
+
+    if(randomChoice === 'freeze') {
+      skill2UnlockChooseFreeze();
+    } else {
+      skill2UnlockChooseUpgrade();
+    }
+    return;
+  }
+
   showModal('skill2UnlockModal');
 
   var colorName = color === 'w' ? 'White' : 'Black';
@@ -336,9 +408,14 @@ function executeSkill1(square, color) {
 
   // Show transformation modal
   showTransformModal(square, randomPiece, color, pieceName, pieceSymbol, function() {
+    // Transform the piece
     game.remove(square);
     game.put({type: randomPiece, color: color}, square);
-    board.position(game.fen());
+
+    // Force update the FEN and reload to ensure consistency
+    var newFEN = game.fen();
+    game.load(newFEN);
+    board.position(newFEN);
 
     // Send transformation to opponent in multiplayer mode
     if(window.gameMode === 'multiplayer' && ws && ws.readyState === WebSocket.OPEN) {
@@ -347,7 +424,7 @@ function executeSkill1(square, color) {
         square: square,
         newPiece: randomPiece,
         color: color,
-        FEN: game.fen()
+        FEN: newFEN
       }));
     }
 
@@ -428,9 +505,14 @@ function useSkill3(color) {
 
 function executeSkill3(square, color) {
   showTransformModal(square, 'q', color, 'Queen', '♛', function() {
+    // Transform the piece
     game.remove(square);
     game.put({type: 'q', color: color}, square);
-    board.position(game.fen());
+
+    // Force update the FEN and reload to ensure consistency
+    var newFEN = game.fen();
+    game.load(newFEN);
+    board.position(newFEN);
 
     // Send transformation to opponent in multiplayer mode
     if(window.gameMode === 'multiplayer' && ws && ws.readyState === WebSocket.OPEN) {
@@ -439,7 +521,7 @@ function executeSkill3(square, color) {
         square: square,
         newPiece: 'q',
         color: color,
-        FEN: game.fen()
+        FEN: newFEN
       }));
     }
 

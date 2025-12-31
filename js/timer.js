@@ -20,6 +20,9 @@ function initializeTimers() {
   updateTimerDisplay('white');
   updateTimerDisplay('black');
 
+  // Initialize board color
+  updateBoardColor('white', window.whiteTimeRemaining);
+
   // Start white's timer first
   startTimer('white');
 }
@@ -52,6 +55,44 @@ function updateTimerDisplay(color) {
       timerElement.style.animation = 'none';
     }
   }
+
+  // Update board color based on current player's time
+  updateBoardColor(color, timeRemaining);
+}
+
+// Update board color based on remaining time
+function updateBoardColor(color, timeRemaining) {
+  // Only update board color for the current player
+  var isCurrentPlayer = (color === 'white' && window.currentTurn === 'w') ||
+                        (color === 'black' && window.currentTurn === 'b');
+
+  if(!isCurrentPlayer) {
+    return;
+  }
+
+  var initialTime = 300; // 5 minutes in seconds
+  var percentage = (timeRemaining / initialTime) * 100;
+  var boardColor;
+
+  // Determine color based on percentage
+  if(percentage > 80) {
+    boardColor = 'var(--Chessvetica--Annotation--LightBlue)'; // Azul fuerte
+  } else if(percentage > 40) {
+    boardColor = 'var(--Chessvetica--Annotation--Green)'; // Verde
+  }  else if(percentage > 10) {
+    boardColor = 'var(--Chessvetica--Annotation--Orange)'; // Naranja
+  } else {
+    boardColor = 'var(--Chessvetica--Annotation--Red)'; // Rojo
+  }
+
+  // Apply the color to the board
+  applyBoardColor(boardColor);
+}
+
+// Apply color to board squares
+function applyBoardColor(color) {
+  // Update CSS custom property for dynamic board coloring
+  document.documentElement.style.setProperty('--board-color-dynamic', color);
 }
 
 // Start a player's timer
@@ -109,6 +150,11 @@ function stopAllTimers() {
 function switchTimer() {
   window.currentTurn = window.currentTurn === 'w' ? 'b' : 'w';
   var color = window.currentTurn === 'w' ? 'white' : 'black';
+  var timeRemaining = color === 'white' ? window.whiteTimeRemaining : window.blackTimeRemaining;
+
+  // Update board color for new player
+  updateBoardColor(color, timeRemaining);
+
   startTimer(color);
 }
 
@@ -155,4 +201,7 @@ function resetTimers() {
   window.currentTurn = 'w';
   updateTimerDisplay('white');
   updateTimerDisplay('black');
+
+  // Reset board color to initial state
+  updateBoardColor('white', window.whiteTimeRemaining);
 }

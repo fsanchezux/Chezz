@@ -84,6 +84,18 @@
   --great: #2e89e5;
   --brilliant: #2b48b9;
 
+  /* Chess helvetica Colors*/
+  --Chessvetica--Annotation--Yellow: #ffcc32;
+  --Chessvetica--Annotation--Orange: #ffa200;
+  --Chessvetica--Annotation--Red: #f61e3d;
+  --Chessvetica--Annotation--Pink: #ff40ff;
+  --Chessvetica--Annotation--Green: #00cc70;
+  --Chessvetica--Annotation--LightBlue: #2e89e5;
+  --Chessvetica--Annotation--Blue: #2b48d9;
+  --Chessvetica--Annotation--Black: #000000;
+  --Chessvetica--Annotation--Grey: #808080;
+  --Chessvetica--Annotation--White: #ffffff;
+
   /* Legacy support - mapped to design system colors */
   --color-green: #d2fe0b;
   --color-black: #313131;

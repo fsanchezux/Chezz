@@ -34,6 +34,7 @@ window.blackHasUsedChange = false;
 window.isAIGame = false;
 window.playerColor = 'w';
 window.aiColor = 'b';
+window.aiELO = 1200; // Default to Intermediate (800=Beginner, 1200=Intermediate, 1600=Advanced, 2000=Expert)
 
 // Initialize the chess game
 function initChessGame() {
@@ -110,22 +111,46 @@ function onDrop(source, target) {
   // Check if game is over after this move
   checkGameEnd();
 
-  // Make AI move if it's AI game
+  // Make AI move if it's AI game (but wait if player has skill modal open)
   if(window.isAIGame && game.turn() === window.aiColor) {
-    setTimeout(makeRandomMove, 500);
+    // Check if skill2UnlockModal is open
+    var skill2Modal = document.getElementById('skill2UnlockModal');
+    if(skill2Modal && skill2Modal.classList.contains('active')) {
+      // Wait for player to choose skill before AI moves
+      waitForSkillChoiceThenAIMove();
+    } else {
+      setTimeout(makeRandomMove, 500);
+    }
   }
 
   return true;
 }
 
-// AI opponent - makes random legal move
+// Wait for player to choose skill, then let AI move
+function waitForSkillChoiceThenAIMove() {
+  var checkInterval = setInterval(function() {
+    var skill2Modal = document.getElementById('skill2UnlockModal');
+    if(!skill2Modal || !skill2Modal.classList.contains('active')) {
+      clearInterval(checkInterval);
+      setTimeout(makeRandomMove, 500);
+    }
+  }, 100);
+}
+
+// AI opponent - makes move based on ELO level
 function makeRandomMove() {
-  var possibleMoves = game.moves();
+  var possibleMoves = game.moves({verbose: true});
 
   if (game.game_over() || possibleMoves.length === 0) return;
 
-  var randomIdx = Math.floor(Math.random() * possibleMoves.length);
-  var move = game.move(possibleMoves[randomIdx]);
+  // AI may use skills before moving (probability based on ELO)
+  var skillChance = getSkillUsageChance();
+  if(window.threeRulesEnabled && Math.random() < skillChance) {
+    tryAIUseSkill();
+  }
+
+  var selectedMove = selectAIMove(possibleMoves);
+  var move = game.move(selectedMove);
 
   board.position(game.fen());
   highlight(move);
@@ -142,11 +167,292 @@ function makeRandomMove() {
   checkGameEnd();
 }
 
+// Get skill usage chance based on ELO
+function getSkillUsageChance() {
+  if(window.aiELO >= 2000) return 0.5; // Expert: 50% chance
+  if(window.aiELO >= 1600) return 0.4; // Advanced: 40% chance
+  if(window.aiELO >= 1200) return 0.3; // Intermediate: 30% chance
+  return 0.15; // Beginner: 15% chance
+}
+
+// Select move based on AI ELO level
+function selectAIMove(possibleMoves) {
+  var elo = window.aiELO || 1200;
+
+  // ELO 800 - Beginner: Mostly random, sometimes makes obvious mistakes
+  if(elo <= 800) {
+    // 20% chance to make a bad move intentionally
+    if(Math.random() < 0.2) {
+      return possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+    }
+    // 80% chance to make a decent move
+    return selectDecentMove(possibleMoves);
+  }
+
+  // ELO 1200 - Intermediate: Balanced play, looks for captures
+  if(elo <= 1200) {
+    // 70% chance to pick good move, 30% random
+    if(Math.random() < 0.7) {
+      return selectGoodMove(possibleMoves);
+    }
+    return selectDecentMove(possibleMoves);
+  }
+
+  // ELO 1600 - Advanced: Strong tactical play
+  if(elo <= 1600) {
+    // 85% chance to pick best move, 15% good move
+    if(Math.random() < 0.85) {
+      return selectBestMove(possibleMoves);
+    }
+    return selectGoodMove(possibleMoves);
+  }
+
+  // ELO 2000 - Expert: Nearly perfect play
+  // 95% chance to pick best move, 5% good move
+  if(Math.random() < 0.95) {
+    return selectBestMove(possibleMoves);
+  }
+  return selectGoodMove(possibleMoves);
+}
+
+// Select a decent move (avoids hanging pieces)
+function selectDecentMove(possibleMoves) {
+  // Filter out moves that hang pieces
+  var safeMoves = possibleMoves.filter(function(move) {
+    var testGame = new Chess(game.fen());
+    testGame.move(move);
+    // Simple check: don't leave pieces hanging
+    return !isMoveLeavingPieceHanging(testGame, move);
+  });
+
+  if(safeMoves.length > 0) {
+    return safeMoves[Math.floor(Math.random() * safeMoves.length)];
+  }
+
+  return possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+}
+
+// Select a good move (prioritizes captures and checks)
+function selectGoodMove(possibleMoves) {
+  // Prioritize: 1) Checkmate, 2) Checks, 3) Captures, 4) Development
+  var checkmates = possibleMoves.filter(function(move) {
+    var testGame = new Chess(game.fen());
+    testGame.move(move);
+    return testGame.in_checkmate();
+  });
+  if(checkmates.length > 0) return checkmates[0];
+
+  var checks = possibleMoves.filter(function(move) {
+    var testGame = new Chess(game.fen());
+    testGame.move(move);
+    return testGame.in_check();
+  });
+
+  var captures = possibleMoves.filter(function(move) {
+    return move.captured;
+  });
+
+  // 50% prefer checks if available
+  if(checks.length > 0 && Math.random() < 0.5) {
+    return checks[Math.floor(Math.random() * checks.length)];
+  }
+
+  // Otherwise prefer captures
+  if(captures.length > 0) {
+    return captures[Math.floor(Math.random() * captures.length)];
+  }
+
+  return selectDecentMove(possibleMoves);
+}
+
+// Select the best move (evaluates position)
+function selectBestMove(possibleMoves) {
+  // Prioritize: 1) Checkmate, 2) Best captures, 3) Checks, 4) Positional
+  var checkmates = possibleMoves.filter(function(move) {
+    var testGame = new Chess(game.fen());
+    testGame.move(move);
+    return testGame.in_checkmate();
+  });
+  if(checkmates.length > 0) return checkmates[0];
+
+  // Evaluate captures by piece value
+  var pieceValues = {p: 1, n: 3, b: 3, r: 5, q: 9, k: 0};
+  var captures = possibleMoves.filter(function(move) {
+    return move.captured;
+  }).sort(function(a, b) {
+    return pieceValues[b.captured] - pieceValues[a.captured];
+  });
+
+  // Take best capture if it's good
+  if(captures.length > 0 && pieceValues[captures[0].captured] >= 3) {
+    return captures[0];
+  }
+
+  // Check for checks that lead to advantage
+  var checks = possibleMoves.filter(function(move) {
+    var testGame = new Chess(game.fen());
+    testGame.move(move);
+    return testGame.in_check();
+  });
+
+  if(checks.length > 0 && Math.random() < 0.7) {
+    return checks[0];
+  }
+
+  // Otherwise take any good capture or random good move
+  if(captures.length > 0) {
+    return captures[0];
+  }
+
+  return selectGoodMove(possibleMoves);
+}
+
+// Simple check if move leaves piece hanging
+function isMoveLeavingPieceHanging(testGame, move) {
+  // Very basic implementation - just check if the moved piece is now attacked
+  // This is simplified; a real engine would do much more
+  return false; // For now, assume moves don't hang pieces
+}
+
+// AI tries to use available skills
+function tryAIUseSkill() {
+  var aiColor = window.aiColor;
+  var colorCode = aiColor === 'w' ? 'w' : 'b';
+
+  // Check which skills are available and not used
+  var availableSkills = [];
+
+  if(colorCode === 'w') {
+    if(window.whiteSkill1Available && !window.whiteSkill1Used) {
+      availableSkills.push(1);
+    }
+    if(window.whiteSkill2Available && window.whiteSkill2Choice === 'freeze' && !window.whiteSkill2Used) {
+      availableSkills.push(2);
+    }
+    if(window.whiteSkill3Available && !window.whiteSkill3Used) {
+      availableSkills.push(3);
+    }
+  } else {
+    if(window.blackSkill1Available && !window.blackSkill1Used) {
+      availableSkills.push(1);
+    }
+    if(window.blackSkill2Available && window.blackSkill2Choice === 'freeze' && !window.blackSkill2Used) {
+      availableSkills.push(2);
+    }
+    if(window.blackSkill3Available && !window.blackSkill3Used) {
+      availableSkills.push(3);
+    }
+  }
+
+  if(availableSkills.length === 0) return;
+
+  // AI randomly picks a skill to use
+  var skillToUse = availableSkills[Math.floor(Math.random() * availableSkills.length)];
+
+  if(skillToUse === 1) {
+    aiUseSkill1(colorCode);
+  } else if(skillToUse === 2) {
+    executeSkill2Freeze(colorCode);
+  } else if(skillToUse === 3) {
+    aiUseSkill3(colorCode);
+  }
+}
+
+// AI uses Skill 1 (Random Transform)
+function aiUseSkill1(color) {
+  var position = board.position();
+  var validPieces = [];
+
+  // Find all AI pieces that can be transformed (not king)
+  for(var square in position) {
+    var piece = position[square];
+    if(piece && piece.charAt(0) === color && piece.charAt(1) !== 'K') {
+      validPieces.push(square);
+    }
+  }
+
+  if(validPieces.length === 0) return;
+
+  // Pick a random piece
+  var randomSquare = validPieces[Math.floor(Math.random() * validPieces.length)];
+
+  // Execute skill without modal
+  var isUpgraded = color === 'w' ? window.whiteSkill1Upgraded : window.blackSkill1Upgraded;
+  var pieces = isUpgraded ? ['b', 'n', 'r'] : ['b', 'n'];
+  var randomPiece = pieces[Math.floor(Math.random() * pieces.length)];
+
+  // Transform the piece
+  game.remove(randomSquare);
+  game.put({type: randomPiece, color: color}, randomSquare);
+
+  // Force update the FEN and reload to ensure consistency
+  var newFEN = game.fen();
+  game.load(newFEN);
+  board.position(newFEN);
+
+  // Mark as used
+  if(color === 'w') {
+    window.whiteSkill1Used = true;
+  } else {
+    window.blackSkill1Used = true;
+  }
+
+  updateSkillButtons();
+
+  var pieceNames = {b: 'Bishop', n: 'Knight', r: 'Rook'};
+  var colorName = color === 'w' ? 'White' : 'Black';
+  showToast('🤖 ' + colorName + ' AI used Skill 1: Transformed to ' + pieceNames[randomPiece] + '!', 3000);
+}
+
+// AI uses Skill 3 (Queen Transform)
+function aiUseSkill3(color) {
+  var position = board.position();
+  var validPieces = [];
+
+  // Find all AI pieces that can be transformed (not king or queen)
+  for(var square in position) {
+    var piece = position[square];
+    if(piece && piece.charAt(0) === color && piece.charAt(1) !== 'K' && piece.charAt(1) !== 'Q') {
+      validPieces.push(square);
+    }
+  }
+
+  if(validPieces.length === 0) return;
+
+  // Pick a random piece (prefer pawns, rooks, bishops, knights)
+  var randomSquare = validPieces[Math.floor(Math.random() * validPieces.length)];
+
+  // Transform the piece
+  game.remove(randomSquare);
+  game.put({type: 'q', color: color}, randomSquare);
+
+  // Force update the FEN and reload to ensure consistency
+  var newFEN = game.fen();
+  game.load(newFEN);
+  board.position(newFEN);
+
+  // Mark as used
+  if(color === 'w') {
+    window.whiteSkill3Used = true;
+  } else {
+    window.blackSkill3Used = true;
+  }
+
+  updateSkillButtons();
+
+  var colorName = color === 'w' ? 'White' : 'Black';
+  showToast('🤖 ' + colorName + ' AI used Skill 3: Transformed to Queen!', 3000);
+}
+
 // Apply promotion
 function applyPromotion(targetSquare, pieceType, color) {
   game.remove(targetSquare);
   game.put({type: pieceType, color: color}, targetSquare);
-  board.position(game.fen());
+
+  // Force update the FEN and reload to ensure consistency
+  var newFEN = game.fen();
+  game.load(newFEN);
+  board.position(newFEN);
 }
 
 // Apply special piece change
@@ -156,7 +462,11 @@ function applySpecialChange(specialChange) {
   if(piece) {
     var color = piece.color;
     game.put({type: specialChange.piece, color: color}, specialChange.square);
-    board.position(game.fen());
+
+    // Force update the FEN and reload to ensure consistency
+    var newFEN = game.fen();
+    game.load(newFEN);
+    board.position(newFEN);
   }
 }
 
