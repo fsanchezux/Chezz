@@ -106,6 +106,8 @@ function handleGoogleSignIn(response) {
  * Sign in with Google button click handler
  */
 function signInWithGoogle() {
+  alert("Not implemented");
+  return
   if (typeof google !== 'undefined' && google.accounts) {
     // Use Google One Tap or redirect to OAuth flow
     google.accounts.id.prompt((notification) => {

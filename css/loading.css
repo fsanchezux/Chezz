@@ -47,7 +47,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(1deg,rgba(210, 254, 11, 1) 0%, rgba(225, 236, 50, 0.33) 55%, rgba(237, 221, 83, 0) 100%);
+  background: linear-gradient(1deg, rgba(210, 254, 11, 1) 0%, rgba(225, 236, 50, 0.33) 55%, rgba(237, 221, 83, 0) 100%);
   pointer-events: none;
   z-index: 1;
 }
@@ -79,11 +79,12 @@
   font-size: 400px;
   line-height: 1;
   color: transparent;
-  -webkit-text-stroke: 3px #d2fe0b;
-  text-stroke: 3px #d2fe0b;
+  -webkit-text-stroke: 3px var(--green);
+  text-stroke: 3px var(--green);
   position: absolute;
   user-select: none;
   filter: drop-shadow(0 0 20px rgba(210, 254, 11, 0.5));
+  animation: glowPulse 2s ease-in-out infinite;
 }
 
 /* Dark piece inside (for the filling effect) */
@@ -91,7 +92,7 @@
   font-family: 'CHESSVETICA', sans-serif;
   font-size: 400px;
   line-height: 1;
-  color: #d2fe0b;
+  color: var(--green);
   position: absolute;
   user-select: none;
   clip-path: inset(100% 0 0 0);
@@ -118,19 +119,15 @@
   }
 }
 
-.chess-piece-outline {
-  animation: glowPulse 2s ease-in-out infinite;
-}
-
 /* Loading text (optional, hidden by default) */
 .loading-text {
   position: absolute;
   bottom: 50px;
   left: 50%;
   transform: translateX(-50%);
-  color: #d2fe0b;
+  color: var(--green);
   font-size: 18px;
-  font-weight: 600;
+  font-weight: bold;
   letter-spacing: 2px;
   text-transform: uppercase;
   opacity: 0;

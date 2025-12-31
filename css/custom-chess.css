@@ -2,27 +2,11 @@
  * Custom styles extracted from index.html
  * Place any additional custom styles here.
  */
-:root {
-	--color-primary: #007BFF;
-	--color-secondary: #6c757d;
-	--color-success: #28a745;
-	--color-danger: #dc3545;
-	--color-warning: #ffc107;
-	--color-info: #17a2b8;
-	--color-dark: #1d1f21;
-	--color-darker: #0a0a0a;
-	--color-light: #f8f9fa;
-	--color-gold: #FFD700;
-	--color-border: #555;
-	--color-text: #FFF;
-	--color-highlight: #CED26B;
-	--color-highlight-dark: #AAA23B;
-}
+/* Variables heredadas de main.css - usar las variables --green, --black, --white, --dark-grey, --light-grey */
 
 body {
-	background-color: var(--color-dark);
-	color: var(--color-text);
-	transition: background-color 0.3s ease, color 0.3s ease;
+	background-color: var(--black);
+	color: var(--white);
 }
 
 /* Toast Notifications */
@@ -31,18 +15,17 @@ body {
 	bottom: -100px;
 	left: 50%;
 	transform: translateX(-50%);
-	background-color: rgba(0, 0, 0, 0.85);
-	color: #fff;
+	background-color: var(--black);
+	color: var(--white);
 	padding: 12px 24px;
 	border-radius: 8px;
 	font-size: 14px;
-	font-weight: 500;
+	font-weight: bold;
 	z-index: 10000;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-	transition: bottom 0.3s ease;
+	box-shadow: none;
 	max-width: 80%;
 	text-align: center;
-	border: 1px solid rgba(255, 215, 0, 0.3);
+	border: 2px solid var(--green);
 }
 
 .toast-notification.show {
@@ -77,10 +60,10 @@ body {
 	color: #404040;
 }
 .click-highlight {
-	box-shadow: inset 0 0 0 3px rgba(0, 123, 255, 0.35) !important;
+	border: 3px solid var(--green) !important;
 }
 .click-source {
-	box-shadow: inset 0 0 0 3px rgba(40, 167, 69, 0.45) !important;
+	border: 3px solid var(--green) !important;
 }
 .modal-overlay {
 	display: none;
@@ -98,19 +81,19 @@ body {
 	display: flex;
 }
 .modal-content {
-	background-color: var(--color-dark);
+	background-color: var(--black);
 	padding: 30px;
 	border-radius: 8px;
-	color: var(--color-text);
+	color: var(--white);
 	text-align: center;
 	max-width: 500px;
-	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
-	border: 1px solid var(--color-border);
+	box-shadow: none;
 }
 .modal-content h3 {
 	margin-top: 0;
 	margin-bottom: 20px;
-	color: var(--color-gold);
+	color: var(--green);
+	font-weight: bold;
 }
 .modal-buttons {
 	display: flex;
@@ -126,34 +109,19 @@ body {
 	cursor: pointer;
 	font-weight: bold;
 	font-size: 14px;
-	transition: all 0.2s ease;
+	box-shadow: none;
 }
 .modal-btn-primary {
-	background-color: var(--color-primary);
-	color: var(--color-text);
-}
-.modal-btn-primary:hover {
-	background-color: #0056b3;
-	transform: translateY(-2px);
-	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+	background-color: var(--green);
+	color: var(--black);
 }
 .modal-btn-secondary {
-	background-color: var(--color-secondary);
-	color: var(--color-text);
-}
-.modal-btn-secondary:hover {
-	background-color: #545b62;
-	transform: translateY(-2px);
-	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+	background-color: var(--black);
+	color: var(--white);
 }
 .modal-btn-success {
-	background-color: var(--color-success);
-	color: var(--color-text);
-}
-.modal-btn-success:hover {
-	background-color: #218838;
-	transform: translateY(-2px);
-	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+	background-color: var(--green);
+	color: var(--black);
 }
 .modal-input-group {
 	margin: 15px 0;
@@ -163,17 +131,18 @@ body {
 	display: block;
 	margin-bottom: 5px;
 	font-weight: bold;
-	color: var(--color-gold);
+	color: var(--green);
 }
 .modal-input-group input,
 .modal-input-group select {
 	width: 100%;
 	padding: 8px;
-	border: 1px solid var(--color-border);
+	border: 2px solid var(--light-grey);
 	border-radius: 4px;
-	background-color: rgba(0, 0, 0, 0.3);
-	color: var(--color-text);
+	background-color: var(--black);
+	color: var(--white);
 	box-sizing: border-box;
+	box-shadow: none;
 }
 .modal-pieces-grid {
 	display: grid;
@@ -183,54 +152,49 @@ body {
 }
 .piece-btn {
 	padding: 10px;
-	border: 2px solid var(--color-border);
+	border: 2px solid var(--light-grey);
 	border-radius: 5px;
-	background-color: rgba(0, 0, 0, 0.3);
-	color: var(--color-text);
+	background-color: var(--black);
+	color: var(--white);
 	cursor: pointer;
 	font-weight: bold;
 	font-size: 16px;
-	transition: all 0.2s ease;
-}
-.piece-btn:hover {
-	border-color: var(--color-gold);
-	background-color: rgba(255, 215, 0, 0.1);
-	transform: scale(1.05);
+	box-shadow: none;
 }
 .piece-btn.selected {
-	border-color: var(--color-gold);
-	background-color: rgba(255, 215, 0, 0.2);
-	box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+	border-color: var(--green);
+	background-color: var(--black);
 }
 .panel-dark {
-	background-color: var(--color-dark);
-	border: 1px solid var(--color-border);
+	background-color: var(--black);
+	border: 2px solid var(--light-grey);
 	border-radius: 5px;
 	padding: 15px;
-	color: var(--color-text);
+	color: var(--white);
+	box-shadow: none;
 }
 .panel-header {
-	background-color: var(--color-darker);
+	background-color: var(--black);
 	padding: 10px;
 	border-radius: 5px;
 	margin-bottom: 10px;
-	border-left: 3px solid var(--color-gold);
+	border-left: 3px solid var(--green);
 }
 .panel-header h5 {
 	margin: 0;
-	color: var(--color-gold);
+	color: var(--green);
 	text-transform: uppercase;
 	font-size: 12px;
 	font-weight: bold;
 }
 #moveHistory {
-	background-color: rgba(0, 0, 0, 0.2);
-	border: 1px solid var(--color-border);
+	background-color: var(--black);
+	border: 2px solid var(--light-grey);
 	border-radius: 4px;
 	padding: 10px;
 }
 #moveHistory > div {
-	border-bottom: 1px solid var(--color-border);
+	border-bottom: 2px solid var(--light-grey);
 	padding: 5px 0;
 	font-size: 12px;
 }
@@ -238,72 +202,42 @@ body {
 	border-bottom: none;
 }
 .btn-primary {
-	background-color: var(--color-primary);
-	border-color: var(--color-primary);
-}
-.btn-primary:hover {
-	background-color: #0056b3;
-	border-color: #0056b3;
+	background-color: var(--green);
+	border-color: var(--green);
+	color: var(--black);
 }
 .btn-success {
-	background-color: var(--color-success);
-	border-color: var(--color-success);
-}
-.btn-success:hover {
-	background-color: #218838;
-	border-color: #218838;
+	background-color: var(--green);
+	border-color: var(--green);
+	color: var(--black);
 }
 .btn-warning {
-	background-color: var(--color-warning);
-	border-color: var(--color-warning);
-	color: #000;
-}
-.btn-warning:hover {
-	background-color: #e0a800;
-	border-color: #e0a800;
+	background-color: var(--green);
+	border-color: var(--green);
+	color: var(--black);
 }
 .btn-danger {
-	background-color: var(--color-danger);
-	border-color: var(--color-danger);
-}
-.btn-danger:hover {
-	background-color: #c82333;
-	border-color: #c82333;
+	background-color: var(--dark-grey);
+	border-color: var(--dark-grey);
+	color: var(--white);
 }
 .btn-info {
-	background-color: var(--color-info);
-	border-color: var(--color-info);
-}
-.btn-info:hover {
-	background-color: #138496;
-	border-color: #138496;
+	background-color: var(--black);
+	border-color: var(--light-grey);
+	color: var(--white);
 }
 .container-chess {
-	background-color: var(--color-dark);
+	background-color: var(--black);
 	padding: 20px;
 	border-radius: 8px;
 	margin-top: 20px;
 }
 .info-bar {
-	background-color: var(--color-dark);
+	background-color: var(--black);
 	padding: 10px;
 	margin-bottom: 10px;
-	border-left: 3px solid var(--color-gold);
+	border-left: 3px solid var(--green);
 	border-radius: 4px;
-}
-#mainMenuModal.active .modal-content,
-#multiplayerSetupModal.active .modal-content {
-	animation: slideDown 0.3s ease-out;
-}
-@keyframes slideDown {
-	from {
-		opacity: 0;
-		transform: translateY(-30px);
-	}
-	to {
-		opacity: 1;
-		transform: translateY(0);
-	}
 }
 #mainMenuModal .modal-btn {
 	text-align: left;
@@ -321,16 +255,16 @@ body {
 .skill-btn {
 	flex: 1;
 	padding: 8px 12px;
-	border: 2px solid var(--color-border);
+	border: 2px solid var(--light-grey);
 	border-radius: 6px;
-	background-color: rgba(0, 0, 0, 0.5);
-	color: #666;
+	background-color: var(--black);
+	color: var(--dark-grey);
 	font-size: 14px;
 	font-weight: bold;
 	cursor: not-allowed;
-	transition: all 0.3s ease;
 	position: relative;
 	overflow: hidden;
+	box-shadow: none;
 }
 
 .skill-btn:disabled {
@@ -338,72 +272,31 @@ body {
 }
 
 .skill-btn.skill-available {
-	background-color: rgba(255, 215, 0, 0.2);
-	border-color: var(--color-gold);
-	color: var(--color-gold);
+	background-color: var(--black);
+	border-color: var(--green);
+	color: var(--green);
 	cursor: pointer;
-	animation: skillGlow 2s ease-in-out infinite;
 }
 
-.skill-btn.skill-available:hover {
-	background-color: rgba(255, 215, 0, 0.4);
-	transform: scale(1.05);
-	box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
-}
-
-.skill-btn.skill-available:active {
-	transform: scale(0.98);
-}
-
-@keyframes skillGlow {
-	0%, 100% {
-		box-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
-	}
-	50% {
-		box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
-	}
-}
-
-/* Timer Blink Animation */
-@keyframes timerBlink {
-	0%, 100% {
-		opacity: 1;
-	}
-	50% {
-		opacity: 0.3;
-	}
-}
-
-/* Skill Active State */
 .skill-btn.skill-active {
-	background-color: rgba(0, 123, 255, 0.3);
-	border-color: #007bff;
-	color: #007bff;
-	box-shadow: 0 0 20px rgba(0, 123, 255, 0.6);
+	background-color: var(--black);
+	border-color: var(--green);
+	color: var(--green);
 }
 
 /* Selectable Pieces Highlight */
 .skill-selectable {
-	box-shadow: inset 0 0 0 4px rgba(0, 255, 0, 0.6) !important;
-	animation: selectablePulse 1.5s ease-in-out infinite;
+	border: 4px solid var(--green) !important;
 	cursor: pointer !important;
-}
-
-@keyframes selectablePulse {
-	0%, 100% {
-		box-shadow: inset 0 0 0 4px rgba(0, 255, 0, 0.6) !important;
-	}
-	50% {
-		box-shadow: inset 0 0 0 4px rgba(0, 255, 0, 1) !important;
-	}
 }
 
 /* Transform Modal */
 .transform-modal {
-	background: linear-gradient(135deg, rgba(20, 20, 40, 0.95), rgba(40, 20, 60, 0.95));
-	border: 3px solid var(--color-gold);
+	background: var(--black);
+	border: 3px solid var(--green);
 	min-width: 400px;
 	text-align: center;
+	box-shadow: none;
 }
 
 .transform-animation {
@@ -416,80 +309,26 @@ body {
 
 .transform-piece {
 	font-size: 80px;
-	animation: transformPulse 0.6s ease-in-out infinite;
 }
 
 .old-piece {
 	opacity: 0.6;
-	animation: transformFadeOut 2s ease-out forwards;
 }
 
 .new-piece {
-	color: var(--color-gold);
-	animation: transformFadeIn 2s ease-in forwards, transformGlow 1s ease-in-out infinite;
+	color: var(--green);
 }
 
 .transform-arrow {
 	font-size: 40px;
-	color: var(--color-gold);
-	animation: transformSlide 1s ease-in-out infinite;
+	color: var(--green);
 }
 
 .transform-text {
 	font-size: 20px;
-	color: var(--color-gold);
+	color: var(--green);
 	font-weight: bold;
 	padding-bottom: 20px;
-	text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-}
-
-@keyframes transformPulse {
-	0%, 100% {
-		transform: scale(1);
-	}
-	50% {
-		transform: scale(1.1);
-	}
-}
-
-@keyframes transformFadeOut {
-	0% {
-		opacity: 1;
-		transform: scale(1);
-	}
-	100% {
-		opacity: 0.2;
-		transform: scale(0.8);
-	}
-}
-
-@keyframes transformFadeIn {
-	0% {
-		opacity: 0;
-		transform: scale(0.5);
-	}
-	100% {
-		opacity: 1;
-		transform: scale(1);
-	}
-}
-
-@keyframes transformGlow {
-	0%, 100% {
-		text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-	}
-	50% {
-		text-shadow: 0 0 30px rgba(255, 215, 0, 1), 0 0 50px rgba(255, 215, 0, 0.8);
-	}
-}
-
-@keyframes transformSlide {
-	0%, 100% {
-		transform: translateX(0);
-	}
-	50% {
-		transform: translateX(10px);
-	}
 }
 
 /* Skill 2 Unlock Modal */
@@ -506,19 +345,12 @@ body {
 .skill2-choice-card {
 	flex: 1;
 	padding: 30px 20px;
-	background: linear-gradient(135deg, rgba(0, 123, 255, 0.1), rgba(123, 0, 255, 0.1));
-	border: 3px solid var(--color-border);
+	background: var(--black);
+	border: 3px solid var(--light-grey);
 	border-radius: 12px;
 	cursor: pointer;
-	transition: all 0.3s ease;
 	text-align: center;
-}
-
-.skill2-choice-card:hover {
-	border-color: var(--color-gold);
-	background: linear-gradient(135deg, rgba(0, 123, 255, 0.2), rgba(123, 0, 255, 0.2));
-	transform: translateY(-5px);
-	box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
+	box-shadow: none;
 }
 
 .skill2-choice-icon {
@@ -529,13 +361,13 @@ body {
 .skill2-choice-title {
 	font-size: 22px;
 	font-weight: bold;
-	color: var(--color-gold);
+	color: var(--green);
 	margin-bottom: 15px;
 }
 
 .skill2-choice-desc {
 	font-size: 14px;
-	color: #ccc;
+	color: var(--dark-grey);
 	line-height: 1.6;
 }
 

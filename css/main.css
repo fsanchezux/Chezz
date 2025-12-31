@@ -72,21 +72,59 @@
 }
 
 /* ============ CSS VARIABLES ============ */
+/* Design System Color Palette - docs/Design_system.md */
 :root {
-  --color-primary: #007BFF;
-  --color-secondary: #6c757d;
-  --color-success: #28a745;
-  --color-danger: #dc3545;
-  --color-warning: #ffc107;
-  --color-info: #17a2b8;
-  --color-dark: #1d1f21;
-  --color-darker: #0a0a0a;
-  --color-light: #f8f9fa;
-  --color-gold: #FFD700;
-  --color-border: #555;
-  --color-text: #FFF;
-  --color-highlight: #CED26B;
-  --color-highlight-dark: #AAA23B;
+  /* Primary Design System Colors */
+  --green: #d2fe0b;
+  --black: #313131;
+  --white: #f9f9f9;
+  --dark-grey: #909090;
+  --light-grey: #b8b8b6;
+
+  /* Legacy support - mapped to design system colors */
+  --color-green: #d2fe0b;
+  --color-black: #313131;
+  --color-white: #f9f9f9;
+  --color-dark-grey: #909090;
+  --color-light-grey: #b8b8b6;
+  --color-primary: #d2fe0b;
+  --color-text: #f9f9f9;
+  --color-dark: #313131;
+  --color-border: #b8b8b6;
+  --color-gold: #d2fe0b;
+  --color-highlight: #d2fe0b;
+  --color-highlight-dark: #d2fe0b;
+}
+.green{
+  background-color:var(--green) !important;
+  color:var(--black) !important;
+}
+.green-text{
+  color:var(--green) !important;
+}
+.black{
+  background-color:var(--black) !important;
+}
+.black-text{
+  color:var(--black) !important;
+}
+.white{
+  background-color:var(--white) !important;
+}
+.white-text{
+  color:var(--white) !important;
+}
+.dark-grey{
+  background-color:var(--dark-grey) !important;
+}
+.dark-grey-text{
+  color:var(--dark-grey) !important;
+}
+.light-grey{
+  background-color:var(--light-grey) !important;
+}
+.light-grey-text{
+  color:var(--light-grey) !important;
 }
 
 /* ============ ACHIEVEMENT NOTIFICATIONS ============ */
@@ -94,18 +132,17 @@
   position: fixed;
   top: -200px;
   right: 20px;
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-  color: #000;
+  background: var(--green);
+  color: var(--black);
   padding: 20px 25px;
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(255, 215, 0, 0.4);
+  box-shadow: none;
   display: flex;
   align-items: center;
   gap: 15px;
   min-width: 320px;
   z-index: 10000;
-  transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid var(--light-grey);
 }
 
 .achievement-notification.show {
@@ -115,16 +152,6 @@
 .achievement-icon {
   font-size: 48px;
   line-height: 1;
-  animation: achievementPulse 1s ease infinite;
-}
-
-@keyframes achievementPulse {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.1);
-  }
 }
 
 .achievement-content {
@@ -159,14 +186,34 @@
 }
 
 body {
-  font-family: 'Delight', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: var(--color-dark);
-  color: var(--color-text);
-  transition: background-color 0.3s ease;
+  font-family: 'Delight', sans-serif;
+  background-color: var(--black);
+  color: var(--white);
   overflow-x: hidden;
 }
 
 /* ============ UTILITY CLASSES ============ */
+/* Text Colors - siguiendo patrón: green-text -> color: green */
+.green-text { color: var(--green); }
+.black-text { color: var(--black); }
+.white-text { color: var(--white); }
+.dark-grey-text { color: var(--dark-grey); }
+.light-grey-text { color: var(--light-grey); }
+
+/* Background Colors - siguiendo patrón: green -> background: green */
+.green { background-color: var(--green); }
+.black { background-color: var(--black); }
+.white { background-color: var(--white); }
+.dark-grey { background-color: var(--dark-grey); }
+.light-grey { background-color: var(--light-grey); }
+
+/* Legacy Background Classes */
+.green-bg { background-color: var(--green); }
+.black-bg { background-color: var(--black); }
+.white-bg { background-color: var(--white); }
+.dark-grey-bg { background-color: var(--dark-grey); }
+.light-grey-bg { background-color: var(--light-grey); }
+
 .hidden {
   display: none !important;
 }
@@ -227,61 +274,50 @@ body {
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
-  font-weight: 600;
-  transition: all 0.3s ease;
+  font-weight: bold;
   text-align: center;
   display: inline-block;
-}
-
-.btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-}
-
-.btn:active {
-  transform: translateY(0);
+  box-shadow: none;
 }
 
 .btn-primary {
-  background-color: var(--color-primary);
-  color: #FFF;
+  background-color: var(--green);
+  color: var(--black);
 }
 
 .btn-success {
-  background-color: var(--color-success);
-  color: #FFF;
+  background-color: var(--green);
+  color: var(--black);
 }
 
 .btn-danger {
-  background-color: var(--color-danger);
-  color: #FFF;
+  background-color: var(--dark-grey);
+  color: var(--white);
 }
 
 .btn-warning {
-  background-color: var(--color-warning);
-  color: #000;
+  background-color: var(--green);
+  color: var(--black);
 }
 
 .btn-black {
-  background-color: #000;
-  border: 2px solid #000;
-  color: #FFF;
+  background-color: var(--black);
+  border: 2px solid var(--light-grey);
+  color: var(--white);
 }
 
 .btn-white {
-  background-color: #FFF;
-  border: 2px solid #FFF;
-  color: #404040;
+  background-color: var(--white);
+  border: 2px solid var(--light-grey);
+  color: var(--black);
 }
 
 .btn:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.5);
 }
 
 .btn.active {
-  box-shadow: 0 0 10px var(--color-gold);
-  border-color: var(--color-gold);
+  border: 2px solid var(--green);
 }
 /* ======= Chess font class ======= */
 .chess-font {
@@ -293,16 +329,15 @@ body {
   bottom: -100px;
   left: 50%;
   transform: translateX(-50%);
-  background-color: rgba(0, 0, 0, 0.9);
-  color: #fff;
+  background-color: var(--black);
+  color: var(--white);
   padding: 16px 24px;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
   z-index: 9999;
-  transition: bottom 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-  border: 1px solid var(--color-gold);
+  box-shadow: none;
+  border: 2px solid var(--green);
 }
 
 .toast-notification.show {
