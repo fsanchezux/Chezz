@@ -146,7 +146,10 @@ function makeRandomMove() {
   // AI may use skills before moving (probability based on ELO)
   var skillChance = getSkillUsageChance();
   if(window.threeRulesEnabled && Math.random() < skillChance) {
-    tryAIUseSkill();
+    var skillUsed = tryAIUseSkill();
+    if(skillUsed) {
+     console.log('AI used a skill');
+    }
   }
 
   var selectedMove = selectAIMove(possibleMoves);
@@ -160,6 +163,7 @@ function makeRandomMove() {
     handleSpecialMove(move);
   }
 
+  console.log('AI made a move');
   // Switch timer back to player
   switchTimer();
 
@@ -509,18 +513,23 @@ function tryAIUseSkill() {
     }
   }
 
-  if(availableSkills.length === 0) return;
+  if(availableSkills.length === 0) return false;
 
   // AI randomly picks a skill to use
   var skillToUse = availableSkills[Math.floor(Math.random() * availableSkills.length)];
 
   if(skillToUse === 1) {
     aiUseSkill1(colorCode);
+    return true;
   } else if(skillToUse === 2) {
     executeSkill2Freeze(colorCode);
+    return true;
   } else if(skillToUse === 3) {
     aiUseSkill3(colorCode);
+    return true;
   }
+
+  return false;
 }
 
 // AI uses Skill 1 (Random Transform)
